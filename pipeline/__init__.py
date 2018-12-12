@@ -58,7 +58,7 @@ class Pipeline(object):
         with open('serverless.yml', 'w') as outfile:
             yaml.dump(sls_dict, outfile, default_flow_style=False)
 
-        with open('requirements.txt', 'w') as reqfile:
+        with open('requirements.txt', 'a+') as reqfile:
             for service in self.services:
                 for req in service.requirements():
                     reqfile.write(req + "\n")
