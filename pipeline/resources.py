@@ -1,3 +1,9 @@
+import json
+import boto3
+
+
+sns_client = boto3.client('sns')
+sqs_client = boto3.client('sqs')
 
 
 class InvalidResource(BaseException):
@@ -43,6 +49,9 @@ class SNSTopic(ServerlessResource):
         self['Type'] = 'AWS::SNS::Topic'
         self['Properties'] = {'TopicName': self.name}
 
+    def send_message(self, message):
+        sns_client.publish(Message=json.dumps(message), TopicArn=self.arn)
+
 
 class SQSQueue(ServerlessResource):
 
@@ -62,6 +71,10 @@ class SQSQueue(ServerlessResource):
     @url.setter
     def url(self, value):
         self.__url = value
+
+    def send_message(self, message):
+        sqs_client.send_message(QueueUrl=self.url,
+                                MessageBody=json.dumps(message))
 
 class ResourceGroup(object):
 
