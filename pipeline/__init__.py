@@ -61,4 +61,4 @@ class Pipeline(object):
         with open('requirements.txt', 'w') as reqfile:
             for service in self.services:
                 for req in service.requirements():
-                    reqfile.write(req)
+                    reqfile.write(req + "\n")
