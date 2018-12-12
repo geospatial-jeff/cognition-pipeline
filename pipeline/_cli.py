@@ -17,10 +17,3 @@ def create_pipeline(name):
     # Copy template project into directory
     template = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'template.py')
     copyfile(template, os.path.join(name, "pipeline.py"))
-
-
-
-
-
-if __name__ == '__main__':
-    create_pipeline()

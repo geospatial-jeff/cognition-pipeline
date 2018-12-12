@@ -10,5 +10,10 @@ setup(
     author="Jeff Albrecht",
     author_email="geospatialjeff@gmail.com",
     packages=find_packages(),
-    install_requires=requirements
+    install_requires=requirements,
+    entry_points={
+        "console_scripts": [
+            "create=pipeline._cli.create_pipeline"
+        ]
+    }
 )
