@@ -1,6 +1,7 @@
 boto3==1.9.62
 botocore==1.12.62
 certifi==2018.11.29
+click==7.0
 docutils==0.14
 jmespath==0.9.3
 python-dateutil==2.7.5
