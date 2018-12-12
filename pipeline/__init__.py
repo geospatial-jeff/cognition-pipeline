@@ -2,7 +2,7 @@ import inspect
 import yaml
 import boto3
 
-from . import utils, resources
+from . import utils, resources, functions
 
 client = boto3.client('sts')
 
@@ -13,20 +13,20 @@ class DeployError(BaseException):
 class Pipeline(object):
 
     def __init__(self, name, resource=None, services=None):
+        self.mode = "deployed"
         self.name = name
         self.execution = utils.Execution()
         self.services = services
         self.resources = resources.ResourceGroup.load_resources(*resource, execution=self.execution)
         self.role = utils.Role(self.name)
-        self.mode = "deployed"
+        self.functions = functions.FunctionGroup.load_functions(self.lambdas(), self)
 
-    def functions(self):
+
+    def lambdas(self):
         base_methods = [x[0] for x in inspect.getmembers(Pipeline, predicate=inspect.isfunction)]
         methods = [x[0] for x in inspect.getmembers(self, predicate=inspect.ismethod)]
-        func_names = list(set(methods)-set(base_methods))
-        func_info = {}
-        [func_info.update(getattr(self, x)(None, None)) for x in func_names]
-        return func_info
+        func_names = [f"{self.name}-{self.execution.stage}-{x}" for x in list(set(methods)-set(base_methods))]
+        return func_names
 
     def define_role(self):
         for (k,v) in self.resources.all.items():
@@ -36,7 +36,6 @@ class Pipeline(object):
 
     def deploy(self):
         self.mode = "deploy"
-        functions = self.functions()
 
         if not self.name:
             raise DeployError("Specify name in pipeline (self.name = <pipeline name>)")
@@ -51,14 +50,15 @@ class Pipeline(object):
                 "iamRoleStatementsName": self.role.name,
                 "iamRoleStatements": self.define_role()
             },
-            "functions": functions, #Functions go here
+            "functions": self.functions.to_dict(), #Functions go here
             "resources": self.resources.to_dict()
         }
 
         with open('serverless.yml', 'w') as outfile:
             yaml.dump(sls_dict, outfile, default_flow_style=False)
 
-        with open('requirements.txt', 'a+') as reqfile:
-            for service in self.services:
-                for req in service.requirements():
-                    reqfile.write(req + "\n")
+        if self.services:
+            with open('requirements.txt', 'a+') as reqfile:
+                for service in self.services:
+                    for req in service.requirements():
+                        reqfile.write(req + "\n")

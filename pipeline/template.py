@@ -15,7 +15,7 @@ class MyTopic(SNSTopic):
 
 class MyPipeline(Pipeline):
 
-    def __init__(self ):
+    def __init__(self):
         super().__init__(name="my-test-pipeline",
                          resource=[MyTopic],
                          services=[UploadFile])
