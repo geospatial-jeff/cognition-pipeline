@@ -13,7 +13,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "create=pipeline._cli.create_pipeline"
+            "create=pipeline._cli:create_pipeline"
         ]
     }
 )
