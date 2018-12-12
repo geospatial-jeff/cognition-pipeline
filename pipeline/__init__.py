@@ -12,9 +12,10 @@ class DeployError(BaseException):
 
 class Pipeline(object):
 
-    def __init__(self, name, resource=None):
+    def __init__(self, name, resource=None, services=None):
         self.name = name
         self.execution = utils.Execution()
+        self.services = services
         self.resources = resources.ResourceGroup.load_resources(*resource, execution=self.execution)
         self.role = utils.Role(self.name)
         self.mode = "deployed"
@@ -56,3 +57,8 @@ class Pipeline(object):
 
         with open('serverless.yml', 'w') as outfile:
             yaml.dump(sls_dict, outfile, default_flow_style=False)
+
+        with open('requirements.txt', 'w') as reqfile:
+            for service in self.services:
+                for req in service.requirements():
+                    reqfile.write(req)
