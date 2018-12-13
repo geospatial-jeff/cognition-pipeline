@@ -1,4 +1,5 @@
 import os
+import sys
 import click
 import subprocess
 from shutil import copyfile
@@ -23,8 +24,11 @@ def create_pipeline(name):
 def deploy_pipeline(name):
 
     os.chdir(name)
-    subprocess.Popen('python handler.py && sls plugin install -n serverless-python-requirements && sls deploy -v', shell=True)
+    sys.path.append(os.getcwd())
+    import handler
+    handler.deploy()
+    subprocess.Popen('sls plugin install -n serverless-python-requirements && sls deploy -v', shell=True)
 
 # if __name__ == "__main__":
 #     deploy_pipeline()
-#     # create_pipeline()
+    # create_pipeline()
