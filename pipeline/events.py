@@ -1,4 +1,5 @@
 import json
+from . import resources
 
 def invoke(f):
 
@@ -80,5 +81,68 @@ def sqs(resource):
             #Load sns message
             data = json.loads(event['Records'][0]['Sns']['Message'])
             return f(self, data, context)
+        return wrapped_f
+    return wrap
+
+def bucket_notification(bucket, event_type, destination):
+
+    """Bucket supports lambda, queue, and topic configurations"""
+
+    def wrap(f):
+        def wrapped_f(self, event, context):
+            dest = self.resources[destination().name]
+            if self.mode == "deploy":
+                bucket_mod = bucket()
+                destination_name = dest.name
+                destination_arn = dest.arn
+                #Add a notification configuration based on destination type
+                if dest.resource == "sqs":
+                    # Bucket configuration
+                    queue_configuration = [
+                        {
+                            "Queue": destination_arn,
+                            "Event": event_type,
+                        }
+                    ]
+                    bucket_mod['Properties'].update({'NotificationConfiguration': {'QueueConfigurations': queue_configuration}})
+                    # SQS Policy
+                    policy = resources.SQSPolicy()
+                    policy = dest.attach_policy(policy)
+                elif dest.resource == "sns":
+                    topic_configuration = [
+                        {
+                            "Topic": destination_arn,
+                            "Event": event_type,
+                        }
+                    ]
+                    bucket_mod['Properties'].update({'NotificationConfiguration': {'TopicConfigurations': topic_configuration}})
+                    # SNS Policy
+                    policy = resources.SNSPolicy()
+                    policy = dest.attach_policy(policy)
+                # Update resource to include notification configuration
+                bucket_mod.update({"DependsOn": [policy.name]})
+                self.resources.update_resource(bucket_mod.name, bucket_mod)
+                # Add policy
+                self.resources.add_resource(policy)
+
+                # Return function handler
+                func_info = {
+                    "handler": f"handler.{f.__name__}",
+                    "events": [
+                        {
+                            "sns": {
+                                "arn": destination_arn,
+                                "topicName": destination_name
+                            }
+                        }
+                    ]
+                }
+                return {f.__name__: func_info}
+            else:
+                if dest.resource == 'sns':
+                    print("SNS message: {}".format(event))
+                elif dest.resource == 'sqs':
+                    print("SQS message: {}".format(event))
+            return f(self, event, context)
         return wrapped_f
     return wrap

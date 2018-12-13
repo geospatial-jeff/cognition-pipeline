@@ -20,7 +20,9 @@ class Role(object):
 
     def to_dict(self):
 
-        if len(self.action) == 0 and len(self.resource) == 0:
+        resource = [x for x in self.resource if x]
+
+        if len(self.action) == 0 and len(resource) == 0:
             return
 
         policy = {
@@ -29,7 +31,7 @@ class Role(object):
         if len(self.action) > 0:
             policy.update({"Action": self.action})
         if len(self.resource) > 0:
-            policy.update({"Resource": self.resource})
+            policy.update({"Resource": resource})
         return [policy]
 
 

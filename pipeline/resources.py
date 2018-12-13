@@ -37,7 +37,7 @@ class ServerlessResource(dict):
 
     @property
     def resource(self):
-        return self['Type'].split('::')[1]
+        return self['Type'].split('::')[1].lower()
 
 
 class SNSTopic(ServerlessResource):
@@ -52,6 +52,36 @@ class SNSTopic(ServerlessResource):
     def send_message(self, message):
         sns_client.publish(Message=json.dumps(message), TopicArn=self.arn)
 
+    def attach_policy(self, policy):
+        policy['Properties']['PolicyDocument']['Id'] = self.name + '-policy'
+        policy['Properties']['PolicyDocument']['Statement'][0]['Resource'] = self.arn
+        policy['Properties']['Topics'].append(self.arn)
+        policy.update({"DependsOn": [self.name]})
+        return policy
+
+class SNSPolicy(ServerlessResource):
+
+    """Base class representing a SNS Topic Policy.  Inherit and extend using dict itnerface"""
+
+    def __init__(self):
+        super().__init__()
+        self['Type'] = 'AWS::SNS::TopicPolicy'
+        self['Properties'] = {
+                            "PolicyDocument": {
+                                "Id": None,
+                                "Statement": [
+                                    {
+                                        "Effect": "Allow",
+                                        "Principal": {
+                                            "AWS": "*"
+                                        },
+                                        "Action": "sns:Publish",
+                                        "Resource": None
+                                    }
+                                ]
+                            },
+                            "Topics": []
+                        }
 
 class SQSQueue(ServerlessResource):
 
@@ -76,12 +106,53 @@ class SQSQueue(ServerlessResource):
         sqs_client.send_message(QueueUrl=self.url,
                                 MessageBody=json.dumps(message))
 
+    def attach_policy(self, policy):
+        policy['Properties']['PolicyDocument']['Id'] = self.name + '-policy'
+        policy['Properties']['PolicyDocument']['Statement'][0]['Resource'] = self.arn
+        policy['Properties']['Queues'].append(self.url)
+        policy.update({"DependsOn": [self.name]})
+        return policy
+
+
+class SQSPolicy(ServerlessResource):
+
+    """Base class representing a SQS Queue Policy.  Inherit and extend using dict itnerface"""
+
+    def __init__(self):
+        super().__init__()
+        self['Type'] = 'AWS::SQS::QueuePolicy'
+        self['Properties'] = {
+                            "PolicyDocument": {
+                                "Id": None,
+                                "Statement": [
+                                    {
+                                        "Effect": "Allow",
+                                        "Principal": {
+                                            "AWS": "*"
+                                        },
+                                        "Action": "sqs:*",
+                                        "Resource": None
+                                    }
+                                ]
+                            },
+                            "Queues": []
+                        }
+
+
+class S3Bucket(ServerlessResource):
+
+    """Base class representing an S3 Bucket.  Inherit and extend using dict interface"""
+
+    def __init__(self):
+        super().__init__()
+        self['Type'] = 'AWS::S3::Bucket'
+        self['Properties'] = {'BucketName': self.name.lower()}
+
 class ResourceGroup(object):
 
     """
     Object used to load resources into a pipeline.  Dynamically generates useful information like resource ARN.
     """
-
     @classmethod
     def load_resources(cls, *args, execution):
         """Class method to load specified resources into the group"""
@@ -93,6 +164,8 @@ class ResourceGroup(object):
                 res.url = f"https://sqs-{execution.region}.amazonaws.com/{execution.accountid}/{res.name}"
             elif res['Type'] == 'AWS::SNS::Topic':
                 arn = f"arn:aws:sns:{execution.region}:{execution.accountid}:{res.name}"
+            elif res['Type'] == 'AWS::S3::Bucket':
+                arn = f"arn:aws:s3:::{res.name}"
             else:
                 raise InvalidResource("The resource is not recognized: {}".format(res.name))
             res.arn = arn
@@ -104,6 +177,12 @@ class ResourceGroup(object):
 
     def __init__(self, resources):
         self.all = resources
+
+    def update_resource(self, resource, new_resource):
+        self.all[resource] = new_resource
+
+    def add_resource(self, resource):
+        self.all.update({resource.name: resource})
 
     def to_dict(self):
         """Dump all resources to dict"""
