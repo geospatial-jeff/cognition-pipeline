@@ -141,9 +141,8 @@ def bucket_notification(bucket, event_type, destination):
             else:
                 if dest.resource == 'sns':
                     msg = json.loads(event['Records'][0])
-                    bucket = msg['s3']['bucket']['name']
-                    key = msg['s3']['object']['key']
-                    return {'bucket': bucket, 'key': key}
+                    data = {'bucket': msg['s3']['bucket']['name'],
+                            'key': msg['s3']['object']['key']}
                 elif dest.resource == 'sqs':
                     data = event
             return f(self, data, context)
