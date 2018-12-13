@@ -2,7 +2,7 @@ import json
 from string import Formatter, Template
 import boto3
 
-
+s3_res = boto3.resource('s3')
 sns_client = boto3.client('sns')
 sqs_client = boto3.client('sqs')
 
@@ -152,6 +152,21 @@ class S3Bucket(ServerlessResource):
         self['Properties'] = {'BucketName': self.name.lower()}
 
         self.arn_pattern = 'arn:aws:s3:::${name}'
+
+    def upload_file(self, key, data):
+        object = s3_res.Object(self.name.lower(), key)
+        object.put(Body=data)
+
+    def upload_image(self, key, file):
+        s3_res.Bucket(self.name.lower()).upload_file(file, key)
+
+    def read_file(self, key):
+        object = s3_res.Object(self.name.lower(), key)
+        file_content = object.get()['Body'].read().decode('utf-8')
+        return file_content
+
+    def download_image(self, key, file):
+        s3_res.Bucket(self.name.lower()).download_file(key, file)
 
 class ResourceGroup(object):
 
