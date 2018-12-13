@@ -51,7 +51,8 @@ class Pipeline(object):
                 "iamRoleStatements": self.define_role()
             },
             "functions": self.functions.to_dict(), #Functions go here
-            "resources": self.resources.to_dict()
+            "resources": self.resources.to_dict(),
+            "plugins": ["serverless-python-requirements"]
         }
 
         with open('serverless.yml', 'w') as outfile:
