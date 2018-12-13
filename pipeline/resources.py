@@ -1,4 +1,5 @@
 import json
+from string import Formatter, Template
 import boto3
 
 
@@ -48,6 +49,7 @@ class SNSTopic(ServerlessResource):
         super().__init__()
         self['Type'] = 'AWS::SNS::Topic'
         self['Properties'] = {'TopicName': self.name}
+        self.arn_pattern = 'arn:aws:sns:${region}:${accountid}:${name}'
 
     def send_message(self, message):
         sns_client.publish(Message=json.dumps(message), TopicArn=self.arn)
@@ -92,6 +94,7 @@ class SQSQueue(ServerlessResource):
         self['Type'] = 'AWS::SQS::Queue'
         self['Properties'] = {'QueueName': self.name}
 
+        self.arn_pattern = 'arn:aws:sqs:${region}:${accountid}:${name}'
         self.__url = None
 
     @property
@@ -148,27 +151,36 @@ class S3Bucket(ServerlessResource):
         self['Type'] = 'AWS::S3::Bucket'
         self['Properties'] = {'BucketName': self.name.lower()}
 
+        self.arn_pattern = 'arn:aws:s3:::${name}'
+
 class ResourceGroup(object):
 
     """
     Object used to load resources into a pipeline.  Dynamically generates useful information like resource ARN.
     """
+    @staticmethod
+    def substitute_arn(res, execution):
+        """https://github.com/sat-utils/sat-stac/blob/master/satstac/item.py"""
+        string = res.arn_pattern
+        subs = {}
+        for key in [x[1] for x in Formatter().parse(string) if x[1] is not None]:
+            if key == "region":
+                subs[key] = execution.region
+            elif key == "accountid":
+                subs[key] = execution.accountid
+            elif key == "name":
+                subs[key] = res.name
+        return Template(string).substitute(**subs)
+
     @classmethod
     def load_resources(cls, *args, execution):
         """Class method to load specified resources into the group"""
         loaded = {}
         for item in args:
             res = item()
+            res.arn = cls.substitute_arn(res, execution)
             if res['Type'] == 'AWS::SQS::Queue':
-                arn = f"arn:aws:sqs:{execution.region}:{execution.accountid}:{res.name}"
                 res.url = f"https://sqs-{execution.region}.amazonaws.com/{execution.accountid}/{res.name}"
-            elif res['Type'] == 'AWS::SNS::Topic':
-                arn = f"arn:aws:sns:{execution.region}:{execution.accountid}:{res.name}"
-            elif res['Type'] == 'AWS::S3::Bucket':
-                arn = f"arn:aws:s3:::{res.name}"
-            else:
-                raise InvalidResource("The resource is not recognized: {}".format(res.name))
-            res.arn = arn
             loaded.update({res.name: res})
         return cls(loaded)
 

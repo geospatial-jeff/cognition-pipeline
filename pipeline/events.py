@@ -1,4 +1,5 @@
 import json
+from string import Formatter
 from . import resources
 
 def invoke(f):
