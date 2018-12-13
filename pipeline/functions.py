@@ -22,11 +22,12 @@ class FunctionGroup(object):
     @classmethod
     def load_functions(cls, func_names, pipeline):
         loaded = {}
+        pipeline.mode = "deploy"
         for item in func_names:
-            pipeline.mode = "deploy"
             short_name = item.split('-')[-1]
             info = getattr(pipeline, short_name)(None, None)
             loaded.update({short_name: Function(item, info)})
+        pipeline.mode = "deployed"
         return cls(loaded)
 
     def __getitem__(self, item):

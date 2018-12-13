@@ -140,9 +140,12 @@ def bucket_notification(bucket, event_type, destination):
                 return {f.__name__: func_info}
             else:
                 if dest.resource == 'sns':
-                    print("SNS message: {}".format(event))
+                    msg = json.loads(event['Records'][0])
+                    bucket = msg['s3']['bucket']['name']
+                    key = msg['s3']['object']['key']
+                    return {'bucket': bucket, 'key': key}
                 elif dest.resource == 'sqs':
-                    print("SQS message: {}".format(event))
-            return f(self, event, context)
+                    data = event
+            return f(self, data, context)
         return wrapped_f
     return wrap
