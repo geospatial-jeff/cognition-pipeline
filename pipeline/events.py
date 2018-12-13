@@ -130,7 +130,7 @@ def bucket_notification(bucket, event_type, destination):
                     "handler": f"handler.{f.__name__}",
                     "events": [
                         {
-                            "sns": {
+                            dest.resource: {
                                 "arn": destination_arn,
                                 "topicName": destination_name
                             }
@@ -140,7 +140,7 @@ def bucket_notification(bucket, event_type, destination):
                 return {f.__name__: func_info}
             else:
                 if dest.resource == 'sns':
-                    msg = json.loads(event['Records'][0])
+                    msg = event['Records'][0]
                     data = {'bucket': msg['s3']['bucket']['name'],
                             'key': msg['s3']['object']['key']}
                 elif dest.resource == 'sqs':
