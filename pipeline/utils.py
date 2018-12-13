@@ -21,6 +21,7 @@ class Role(object):
     def to_dict(self):
 
         resource = [x for x in self.resource if x]
+        actions = list(set(self.action))
 
         if len(self.action) == 0 and len(resource) == 0:
             return
@@ -29,7 +30,7 @@ class Role(object):
             "Effect": "Allow",
         }
         if len(self.action) > 0:
-            policy.update({"Action": self.action})
+            policy.update({"Action": actions})
         if len(self.resource) > 0:
             policy.update({"Resource": resource})
         return [policy]
