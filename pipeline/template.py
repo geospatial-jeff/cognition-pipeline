@@ -31,6 +31,5 @@ pipeline = MyPipeline()
 def my_lambda(event, context):
     pipeline.my_lambda(event, context)
 
-
-if __name__ == "__main__":
+def deploy():
     pipeline.deploy()
