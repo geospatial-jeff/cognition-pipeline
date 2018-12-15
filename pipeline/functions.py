@@ -49,6 +49,18 @@ class FunctionGroup(object):
                 ]
             })
             return {func_name: Function(func_name, func_info)}
+        elif event == 'sqs':
+            func_info.update({
+                "events": [
+                    {
+                        "sqs": {
+                            "arn": pipeline.resources[func.args['queue_name']].arn,
+                        }
+                    }
+                ]
+            })
+            return {func_name: Function(func_name, func_info)}
+
 
 
     @classmethod

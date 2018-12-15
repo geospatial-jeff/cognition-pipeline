@@ -44,7 +44,7 @@ class SQSQueue(ServerlessResource):
 
     @property
     def arn(self):
-        return f"arn:aws:sns:{execution.region}:{execution.accountid}:{self.name}"
+        return f"arn:aws:sqs:{execution.region}:{execution.accountid}:{self.name}"
 
     @property
     def url(self):

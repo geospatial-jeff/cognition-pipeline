@@ -23,7 +23,6 @@ def http(path, method, cors):
 
 def sns(resource):
 
-
     def wrapper(f):
         @wraps(f)
         def wrapped_f(self, event, context):
@@ -32,4 +31,18 @@ def sns(resource):
         wrapped_f.id = 'sns'
         wrapped_f.args = {'arn': resource.arn, 'topic_name': resource.name}
         return wrapped_f
+    return wrapper
+
+def sqs(resource):
+
+    def wrapper(f):
+        @wraps(f)
+        def wraped_f(self, event, context):
+            for record in event['Records']:
+                data = json.loads(record['body'])
+                output = f(self, data, context)
+            return
+        wraped_f.id = 'sqs'
+        wraped_f.args = {'arn': resource.arn, 'url': resource.url, 'queue_name': resource.name}
+        return wraped_f
     return wrapper
