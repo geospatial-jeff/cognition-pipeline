@@ -17,18 +17,16 @@ def create_pipeline(name):
 
     # Copy template project into directory
     template = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'template.py')
-    copyfile(template, os.path.join(name, "handler.py"))
+    copyfile(template, os.path.join(name, 'handler.py'))
 
 @click.command()
 @click.argument("name")
 def deploy_pipeline(name):
-
     os.chdir(name)
     sys.path.append(os.getcwd())
     import handler
     handler.deploy()
-    subprocess.Popen('sls plugin install -n serverless-python-requirements && sls deploy -v', shell=True)
 
-# if __name__ == "__main__":
-#     deploy_pipeline()
+if __name__ == "__main__":
     # create_pipeline()
+    deploy_pipeline()

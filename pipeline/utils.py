@@ -1,10 +1,45 @@
+
 import boto3
 
 client = boto3.client('sts')
 
-class Role(object):
+class Execution(object):
 
-    """IAM Role"""
+    def __init__(self):
+        self.__runtime = 'python3.6'
+        self.__region = 'us-east-1'
+        self.__stage = 'dev'
+        self.__accountid = client.get_caller_identity()['Account']
+
+    @property
+    def runtime(self):
+        return self.__runtime
+
+    @runtime.setter
+    def runtime(self, value):
+        self.__runtime = value
+
+    @property
+    def region(self):
+        return self.__region
+
+    @region.setter
+    def region(self, value):
+        self.__region = value
+
+    @property
+    def stage(self):
+        return self.__stage
+
+    @stage.setter
+    def stage(self, value):
+        self.__stage = value
+
+    @property
+    def accountid(self):
+        return self.__accountid
+
+class Role(object):
 
     def __init__(self, name):
         self.name = name + "-role"
@@ -19,29 +54,21 @@ class Role(object):
         self.resource.append(value)
 
     def to_dict(self):
-
-        resource = [x for x in self.resource if x]
+        resources = [x for x in self.resource if x]
         actions = list(set(self.action))
 
-        if len(self.action) == 0 and len(resource) == 0:
+        if len(actions) == 0 and len(resources) == 0:
             return
 
         policy = {
-            "Effect": "Allow",
+            "Effect": self.effect
         }
         if len(self.action) > 0:
             policy.update({"Action": actions})
         if len(self.resource) > 0:
-            policy.update({"Resource": resource})
+            policy.update({"Resource": resources})
         return [policy]
 
 
-class Execution(dict):
 
-    def __init__(self):
-        super().__init__()
-        self.runtime = 'python3.6'
-        self.region = 'us-east-1'
-        self.stage = 'dev'
-        self.accountid = client.get_caller_identity()['Account']
-
+execution = Execution()

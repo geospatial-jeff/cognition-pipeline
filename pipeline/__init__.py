@@ -1,44 +1,35 @@
 import inspect
 import yaml
-import boto3
 
-from . import utils, resources, functions
-
-client = boto3.client('sts')
-
-
-class DeployError(BaseException):
-    pass
+from . import resources, functions
+from .utils import execution, Role
 
 class Pipeline(object):
 
     def __init__(self, name, resource=None, services=None):
-        self.mode = "deployed"
         self.name = name
-        self.execution = utils.Execution()
+        self.execution = execution
+        if resource:
+            self.resources = resources.ResourceGroup.load_resources(resource)
+        else:
+            self.resources = resource
         self.services = services
-        self.resources = resources.ResourceGroup.load_resources(*resource, execution=self.execution)
-        self.role = utils.Role(self.name)
         self.functions = functions.FunctionGroup.load_functions(self.lambdas(), self)
-
+        self.role = Role(self.name)
 
     def lambdas(self):
         base_methods = [x[0] for x in inspect.getmembers(Pipeline, predicate=inspect.isfunction)]
-        methods = [x[0] for x in inspect.getmembers(self, predicate=inspect.ismethod)]
-        func_names = [f"{self.name}-{self.execution.stage}-{x}" for x in list(set(methods)-set(base_methods))]
-        return func_names
+        methods = [x[0] for x in inspect.getmembers(self, predicate=inspect.ismethod) if x[0] not in base_methods]
+        return methods
 
     def define_role(self):
-        for (k,v) in self.resources.all.items():
-            self.role.add_resource(v.arn)
-            self.role.add_action(v.resource.lower() + ':*')
+        if self.resources:
+            for (k,v) in self.resources.all.items():
+                self.role.add_resource(v.arn)
+                self.role.add_action(v.resource.lower() + ':*')
         return self.role.to_dict()
 
     def deploy(self):
-        self.mode = "deploy"
-
-        if not self.name:
-            raise DeployError("Specify name in pipeline (self.name = <pipeline name>)")
 
         sls_dict = {
             "service": self.name,
@@ -51,9 +42,11 @@ class Pipeline(object):
                 "iamRoleStatements": self.define_role()
             },
             "functions": self.functions.to_dict(), #Functions go here
-            "resources": self.resources.to_dict(),
             "plugins": ["serverless-python-requirements"]
         }
+
+        if self.resources:
+            sls_dict.update({"resources": self.resources.to_dict()})
 
         with open('serverless.yml', 'w') as outfile:
             yaml.dump(sls_dict, outfile, default_flow_style=False)

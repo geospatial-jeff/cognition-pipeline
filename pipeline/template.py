@@ -1,35 +1,26 @@
-from pipeline import Pipeline
-from pipeline.resources import SNSTopic
-from pipeline import events
+from pipeline import Pipeline, events
 
-from pipeline.services import UploadFile
-
-"""Define resources"""
-
-class MyTopic(SNSTopic):
-
-    def __init__(self):
-        super().__init__()
-
-"""Create the pipeline"""
 
 class MyPipeline(Pipeline):
 
     def __init__(self):
-        super().__init__(name="my-test-pipeline",
-                         resource=[MyTopic],
-                         services=[UploadFile])
+        super().__init__(name="my-pipeline")
 
-    @events.sns(resource=MyTopic)
+
+    @events.invoke
     def my_lambda(self, event, context):
-        UploadFile().execute(event, context)
+        print("Hello world!")
 
 pipeline = MyPipeline()
 
-"""Define lambda functions"""
+
+"""Lambda handlers"""
 
 def my_lambda(event, context):
     pipeline.my_lambda(event, context)
+
+
+"""Deploy pipeline"""
 
 def deploy():
     pipeline.deploy()

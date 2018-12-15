@@ -11,7 +11,3 @@ class UploadFile(object):
     @classmethod
     def requirements(cls):
         return ["boto3>=1.9.62"]
-
-
-
-
