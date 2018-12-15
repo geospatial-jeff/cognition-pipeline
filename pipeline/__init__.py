@@ -6,13 +6,14 @@ from .utils import execution, Role
 
 class Pipeline(object):
 
-    def __init__(self, name, resource=None):
+    def __init__(self, name, resource=None, services=None):
         self.name = name
         self.execution = execution
         if resource:
             self.resources = resources.ResourceGroup.load_resources(resource)
         else:
             self.resources = resource
+        self.services = services
         self.functions = functions.FunctionGroup.load_functions(self.lambdas(), self)
         self.role = Role(self.name)
 
@@ -49,3 +50,9 @@ class Pipeline(object):
 
         with open('serverless.yml', 'w') as outfile:
             yaml.dump(sls_dict, outfile, default_flow_style=False)
+
+        if self.services:
+            with open('requirements.txt', 'a+') as reqfile:
+                for service in self.services:
+                    for req in service.requirements():
+                        reqfile.write(req + "\n")
