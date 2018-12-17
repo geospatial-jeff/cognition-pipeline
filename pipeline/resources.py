@@ -18,9 +18,12 @@ class ServerlessResource(dict):
 
     @property
     def resource(self):
+        """Return resource type (sns, sqs etc.)"""
         return self['Type'].split('::')[1].lower()
 
 class SNSTopic(ServerlessResource):
+
+    """Base class representing a SNS Topic.  Inherit and extend using dict interface"""
 
     def __init__(self):
         super().__init__()
@@ -39,7 +42,8 @@ class SNSTopic(ServerlessResource):
         return policy
 
 class SNSPolicy(ServerlessResource):
-    """Base class representing a SNS Topic Policy.  Inherit and extend using dict itnerface"""
+
+    """Base class representing a SNS Topic Policy.  Inherit and extend using dict interface"""
 
     def __init__(self):
         super().__init__()
@@ -93,6 +97,7 @@ class SQSQueue(ServerlessResource):
         return policy
 
 class SQSPolicy(ServerlessResource):
+
     """Base class representing a SQS Queue Policy.  Inherit and extend using dict itnerface"""
 
     def __init__(self):
@@ -144,6 +149,8 @@ class S3Bucket(ServerlessResource):
         s3_res.Bucket(self.name.lower()).download_file(key, file)
 
 class ResourceGroup(object):
+
+    """Object representing a group of resources.  Used internally to package resources"""
 
     @classmethod
     def load_resources(cls, res_list):

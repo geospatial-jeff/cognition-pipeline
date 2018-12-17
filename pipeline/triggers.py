@@ -1,4 +1,8 @@
 
+"""
+Contains a collection of triggers, one for each event specified in event.py.
+"""
+
 class Trigger(object):
 
     def __init__(self, info):

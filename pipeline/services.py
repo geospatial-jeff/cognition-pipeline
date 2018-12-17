@@ -2,6 +2,8 @@ import boto3
 
 class UploadFile(object):
 
+    """Example service template.  Requires both the `execute` and `requirements` methods"""
+
     @classmethod
     def execute(cls, event, context):
         s3 = boto3.resource('s3')

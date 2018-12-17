@@ -1,6 +1,14 @@
 from functools import wraps
 import json
 
+"""
+Decorators used to specify event type for lambda invocations. Uses functools.wraps to preserve the original function 
+metadata, allowing this metadata to be accessable to the Pipeline object while outside the function's scope.  Each
+decorator creates a `trigger` and `args` attribute on the decorated function which are used internally to orchestrate
+configuration and deployment.
+"""
+
+
 def invoke(f):
 
     @wraps(f)

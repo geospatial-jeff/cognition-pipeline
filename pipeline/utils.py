@@ -5,6 +5,8 @@ client = boto3.client('sts')
 
 class Execution(object):
 
+    """Object which defines the execution environment for the pipeline"""
+
     def __init__(self):
         self.__runtime = 'python3.6'
         self.__region = 'us-east-1'
@@ -41,6 +43,8 @@ class Execution(object):
 
 class Role(object):
 
+    """Object which defines IAM Role used by the pipeline and its lambda functions"""
+
     def __init__(self, name):
         self.name = name + "-role"
         self.effect = "Allow"
@@ -68,7 +72,5 @@ class Role(object):
         if len(self.resource) > 0:
             policy.update({"Resource": resources})
         return [policy]
-
-
 
 execution = Execution()

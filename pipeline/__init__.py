@@ -7,6 +7,15 @@ from . import resources as res
 
 class Pipeline(object):
 
+    """
+    Base class representing an AWS Pipeline which may be inherited to build a custom pipeline:
+
+        - Methods represent lambda functions
+        - Decorators change the invocation trigger of the lambda function
+        - Resources may be constructed using the appropriate base class and passed into the pipeline
+        - Services may be imported into the pipeline
+    """
+
     def __init__(self, name, resources=None, services=None):
         self.name = name
         self.execution = execution
@@ -19,14 +28,17 @@ class Pipeline(object):
         self.services = services
 
     def lambdas(self):
+        """Return names of pipeline's methods (lambda functions)"""
         base_methods = [x[0] for x in inspect.getmembers(Pipeline, predicate=inspect.isfunction)]
         methods = [x[0] for x in inspect.getmembers(self, predicate=inspect.ismethod) if x[0] not in base_methods]
         return methods
 
     def load_functions(self):
+        """Load functions into a FunctionGroup"""
         return functions.FunctionGroup({fname:functions.Function(getattr(self, fname)) for fname in self.lambdas()})
 
     def define_role(self):
+        """Define the pipeline's IAM role based on available resources"""
         if self.resources:
             for (k,v) in self.resources.all.items():
                 if 'policy' not in v['Type'].lower():
@@ -35,7 +47,7 @@ class Pipeline(object):
         return self.role.to_dict()
 
     def deploy(self):
-
+        """Generate a serverless.yml file of the pipeline which may be deployed with Serverless Framework"""
         # Bucket notifications require setting up some additional policies.  Do this outside scope of lambda execution
         # so we aren't creating resource templates during runtime.
         # A lot of this could be abstracted to the resource object itself

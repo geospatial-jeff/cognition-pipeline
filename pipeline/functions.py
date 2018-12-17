@@ -7,6 +7,8 @@ lambda_client = boto3.client('lambda')
 
 class Function(object):
 
+    """Object representing an AWS Lambda function and its trigger"""
+
     def __init__(self, func):
         self.func = func
         self.name = func.__name__
@@ -14,6 +16,7 @@ class Function(object):
 
 
     def invoke(self, data, invocation="Event"):
+        """Invoke the lambda function"""
         response = lambda_client.invoke(FunctionName=self.name,
                                         InvocationType=invocation,
                                         Payload=json.dumps(data))
@@ -33,6 +36,8 @@ class Function(object):
 
 class FunctionGroup(object):
 
+    """Object representing a group of functions.  Used internally to package lambda functions"""
+
     def __getitem__(self, item):
         return self.all[item]
 
@@ -44,6 +49,8 @@ class FunctionGroup(object):
 
 def timeout(time):
 
+    """Decorator to specify the lambda function's timeout"""
+
     def wrapper(f):
         @wraps(f)
         def wrapped_f(self, event, context):
@@ -54,6 +61,10 @@ def timeout(time):
 
 
 def memory(mem_mb):
+
+    """
+    Decorator to specify the lambda function's max memory size
+    """
 
     def wrapper(f):
         @wraps(f)

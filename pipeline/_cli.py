@@ -7,6 +7,7 @@ from shutil import copyfile
 @click.command()
 @click.argument("name")
 def create_pipeline(name):
+    """Create a template pipeline in a specified directory"""
 
     if not os.path.exists(name):
         os.makedirs(name)
@@ -22,11 +23,12 @@ def create_pipeline(name):
 @click.command()
 @click.argument("name")
 def deploy_pipeline(name):
+    """Deploy the pipeline in a specified directory (creates serverless.yml)"""
     os.chdir(name)
     sys.path.append(os.getcwd())
     import handler
     handler.deploy()
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # create_pipeline()
-    deploy_pipeline()
+    # deploy_pipeline()
