@@ -33,10 +33,6 @@ class Function(object):
 
 class FunctionGroup(object):
 
-    @classmethod
-    def load_functions(cls, func_names, pipeline):
-        return cls({fname:Function(getattr(pipeline, fname)) for fname in func_names})
-
     def __getitem__(self, item):
         return self.all[item]
 

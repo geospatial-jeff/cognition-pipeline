@@ -23,6 +23,9 @@ class Pipeline(object):
         methods = [x[0] for x in inspect.getmembers(self, predicate=inspect.ismethod) if x[0] not in base_methods]
         return methods
 
+    def load_functions(self):
+        return functions.FunctionGroup({fname:functions.Function(getattr(self, fname)) for fname in self.lambdas()})
+
     def define_role(self):
         if self.resources:
             for (k,v) in self.resources.all.items():
