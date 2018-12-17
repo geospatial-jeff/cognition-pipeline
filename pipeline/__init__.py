@@ -14,7 +14,7 @@ class Pipeline(object):
             self.resources = res.ResourceGroup.load_resources(resources)
         else:
             self.resources = resources
-        self.functions = functions.FunctionGroup.load_functions(self.lambdas(), self)
+        self.functions = self.load_functions()
         self.role = Role(self.name)
         self.services = services
 
