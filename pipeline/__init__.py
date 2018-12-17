@@ -10,11 +10,11 @@ class Pipeline(object):
     def __init__(self, name, resources=None, services=None):
         self.name = name
         self.execution = execution
+        self.functions = self.load_functions()
         if resources:
             self.resources = res.ResourceGroup.load_resources(resources)
         else:
             self.resources = resources
-        self.functions = self.load_functions()
         self.role = Role(self.name)
         self.services = services
 
@@ -29,11 +29,50 @@ class Pipeline(object):
     def define_role(self):
         if self.resources:
             for (k,v) in self.resources.all.items():
-                self.role.add_resource(v.arn)
-                self.role.add_action(v.resource.lower() + ':*')
+                if 'policy' not in v['Type'].lower():
+                    self.role.add_resource(v.arn)
+                    self.role.add_action(v.resource.lower() + ':*')
         return self.role.to_dict()
 
     def deploy(self):
+
+        # Bucket notifications require setting up some additional policies.  Do this outside scope of lambda execution
+        # so we aren't creating resource templates during runtime.
+        # A lot of this could be abstracted to the resource object itself
+        for (k,v) in self.functions.all.items():
+            if v.trigger.name == 'bucket_notification':
+                bucket = v.trigger.info['bucket'] #Bucket resource
+                destination = v.trigger.info['destination'] #Destination resource
+                event = v.trigger.info['event']
+                if destination.resource == 'sns':
+                    # Bucket configuration
+                    topic_configuration = [
+                        {
+                            "Topic": destination.arn,
+                            "Event": event,
+                        }
+                    ]
+                    bucket['Properties'].update(
+                        {'NotificationConfiguration': {'TopicConfigurations': topic_configuration}})
+                    # SNS Policy
+                    policy = res.SNSPolicy()
+                    destination.attach_policy(policy)
+                elif destination.resource == 'sqs':
+                    # Bucket configuration
+                    queue_configuration = [
+                        {
+                            "Queue": destination.arn,
+                            "Event": event,
+                        }
+                    ]
+                    bucket['Properties'].update(
+                        {'NotificationConfiguration': {'QueueConfigurations': queue_configuration}})
+                    # SQS Policy
+                    policy = res.SQSPolicy()
+                    destination.attach_policy(policy)
+                bucket.update({"DependsOn": [policy.name]})
+                self.resources.update_resource(bucket.name, bucket)
+                self.resources.add_resource(policy)
 
         sls_dict = {
             "service": self.name,

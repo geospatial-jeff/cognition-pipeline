@@ -47,3 +47,14 @@ def sqs(resource):
         wrapped_f.args = {'arn': resource.arn, 'url': resource.url, 'queue_name': resource.name}
         return wrapped_f
     return wrapper
+
+def bucket_notification(bucket, event_type, destination):
+
+    def wrapper(f):
+        @wraps(f)
+        def wrapped_f(self, event, context):
+            return f(self, event, context)
+        wrapped_f.trigger = 'bucket_notification'
+        wrapped_f.args = {'bucket': bucket, 'event': event_type, 'destination': destination}
+        return wrapped_f
+    return wrapper

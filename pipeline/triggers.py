@@ -2,7 +2,7 @@
 class Trigger(object):
 
     def __init__(self, info):
-        self.name = self.__class__.__name__
+        self.name = self.__class__.__name__.lower()
         self.info = info
 
 class SNS(Trigger):
@@ -63,3 +63,32 @@ class SQS(Trigger):
                 }
             ]
         }
+
+class BUCKET_NOTIFICATION(Trigger):
+
+    def __init__(self, info):
+        super().__init__(info)
+
+    def template(self):
+        event_type = self.info['destination'].resource
+        if event_type == 'sns':
+            return {
+                "events": [
+                    {
+                        "sns": {
+                            "arn": self.info['destination'].arn,
+                            "topicName": self.info['destination'].name
+                        }
+                    }
+                ]
+            }
+        elif event_type == 'sqs':
+            return {
+                "events": [
+                    {
+                        "sqs": {
+                            "arn": self.info['destination'].arn,
+                        }
+                    }
+                ]
+            }
