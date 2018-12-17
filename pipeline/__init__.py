@@ -1,26 +1,31 @@
 import inspect
 import yaml
 
-from . import resources, functions
 from .utils import execution, Role
+from . import triggers, functions
+from . import resources as res
 
 class Pipeline(object):
 
-    def __init__(self, name, resource=None, services=None):
+    def __init__(self, name, resources=None, services=None):
         self.name = name
         self.execution = execution
-        if resource:
-            self.resources = resources.ResourceGroup.load_resources(resource)
+        self.triggers = self.load_triggers()
+        if resources:
+            self.resources = res.ResourceGroup.load_resources(resources)
         else:
-            self.resources = resource
-        self.services = services
+            self.resources = resources
         self.functions = functions.FunctionGroup.load_functions(self.lambdas(), self)
         self.role = Role(self.name)
+        self.services = services
 
     def lambdas(self):
         base_methods = [x[0] for x in inspect.getmembers(Pipeline, predicate=inspect.isfunction)]
         methods = [x[0] for x in inspect.getmembers(self, predicate=inspect.ismethod) if x[0] not in base_methods]
         return methods
+
+    def load_triggers(self):
+        return {x:getattr(triggers, getattr(self, x).trigger.upper())(getattr(self, x).args) for x in self.lambdas()}
 
     def define_role(self):
         if self.resources:
@@ -41,7 +46,7 @@ class Pipeline(object):
                 "iamRoleStatementsName": self.role.name,
                 "iamRoleStatements": self.define_role()
             },
-            "functions": self.functions.to_dict(), #Functions go here
+            "functions": self.functions.to_dict(),
             "plugins": ["serverless-python-requirements"]
         }
 
