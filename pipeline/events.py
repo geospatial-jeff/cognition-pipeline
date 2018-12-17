@@ -61,7 +61,11 @@ def bucket_notification(bucket, event_type, destination):
     def wrapper(f):
         @wraps(f)
         def wrapped_f(self, event, context):
-            return f(self, event, context)
+            if destination.resource == 'sns':
+                msg = event['Records'][0]
+                data = {'bucket': msg['s3']['bucket']['name'],
+                        'key': msg['s3']['object']['key']}
+            return f(self, data, context)
         wrapped_f.trigger = 'bucket_notification'
         wrapped_f.args = {'bucket': bucket, 'event': event_type, 'destination': destination}
         return wrapped_f
