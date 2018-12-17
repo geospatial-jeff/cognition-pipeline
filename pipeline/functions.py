@@ -1,13 +1,17 @@
 import boto3
 import json
+from functools import wraps
+from . import triggers
 
 lambda_client = boto3.client('lambda')
 
 class Function(object):
 
-    def __init__(self, name, info):
-        self.name = name
-        self.info = info
+    def __init__(self, func):
+        self.func = func
+        self.name = func.__name__
+        self.trigger = getattr(triggers, func.trigger.upper())(func.args)
+
 
     def invoke(self, data, invocation="Event"):
         response = lambda_client.invoke(FunctionName=self.name,
@@ -15,62 +19,23 @@ class Function(object):
                                         Payload=json.dumps(data))
         return response
 
+    def package_function(self):
+        """Package function with trigger"""
+        func_info = {'handler': 'handler.'+self.name}
+        trigger_info = self.trigger.template()
+        if trigger_info:
+            func_info.update(trigger_info)
+        if hasattr(self.func, 'timeout'):
+            func_info.update({'timeout': self.func.timeout})
+        if hasattr(self.func, 'memory'):
+            func_info.update({'memorySize': self.func.memory})
+        return func_info
+
 class FunctionGroup(object):
-
-    @staticmethod
-    def load(func, pipeline):
-        func_name = func.__name__
-        event = func.id
-        func_info = {"handler": 'handler.'+func_name}
-        if event == 'lambda':
-            return {func_name: Function(func_name, func_info)}
-        elif event == 'http':
-            func_info.update({
-                "events": [
-                    {
-                        "http": {
-                            "path": func.args['path'],
-                            "method": func.args['method'],
-                            "cors": func.args['cors']
-                        }
-                    }
-                ]
-            })
-            return {func_name: Function(func_name, func_info)}
-        elif event == 'sns':
-            func_info.update({
-                "events": [
-                    {
-                        "sns": {
-                            "arn": pipeline.resources[func.args['topic_name']].arn,
-                            "topicName": func.args['topic_name'],
-                        }
-                    }
-                ]
-            })
-            return {func_name: Function(func_name, func_info)}
-        elif event == 'sqs':
-            func_info.update({
-                "events": [
-                    {
-                        "sqs": {
-                            "arn": pipeline.resources[func.args['queue_name']].arn,
-                        }
-                    }
-                ]
-            })
-            return {func_name: Function(func_name, func_info)}
-
-
 
     @classmethod
     def load_functions(cls, func_names, pipeline):
-        loaded = {}
-        for item in func_names:
-            func = getattr(pipeline, item)
-            info = cls.load(func, pipeline)
-            loaded.update(info)
-        return cls(loaded)
+        return cls({fname:Function(getattr(pipeline, fname)) for fname in func_names})
 
     def __getitem__(self, item):
         return self.all[item]
@@ -79,6 +44,25 @@ class FunctionGroup(object):
         self.all = functions
 
     def to_dict(self):
-        # dicts = [self.all[k].info for k in self.all.keys()]
-        dicts = [{k:self.all[k].info} for k in self.all.keys()]
-        return dicts
+        return {k:v.package_function() for (k,v) in self.all.items()}
+
+def timeout(time):
+
+    def wrapper(f):
+        @wraps(f)
+        def wrapped_f(self, event, context):
+            return f(self, event, context)
+        wrapped_f.timeout = time
+        return wrapped_f
+    return wrapper
+
+
+def memory(mem_mb):
+
+    def wrapper(f):
+        @wraps(f)
+        def wrapped_f(self, event, context):
+            return f(self, event, context)
+        wrapped_f.memory = mem_mb
+        return wrapped_f
+    return wrapper
