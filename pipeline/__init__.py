@@ -10,7 +10,6 @@ class Pipeline(object):
     def __init__(self, name, resources=None, services=None):
         self.name = name
         self.execution = execution
-        self.triggers = self.load_triggers()
         if resources:
             self.resources = res.ResourceGroup.load_resources(resources)
         else:
@@ -23,9 +22,6 @@ class Pipeline(object):
         base_methods = [x[0] for x in inspect.getmembers(Pipeline, predicate=inspect.isfunction)]
         methods = [x[0] for x in inspect.getmembers(self, predicate=inspect.ismethod) if x[0] not in base_methods]
         return methods
-
-    def load_triggers(self):
-        return {x:getattr(triggers, getattr(self, x).trigger.upper())(getattr(self, x).args) for x in self.lambdas()}
 
     def define_role(self):
         if self.resources:
