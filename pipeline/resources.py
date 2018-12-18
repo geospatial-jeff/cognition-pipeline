@@ -131,7 +131,7 @@ class S3Bucket(ServerlessResource):
 
     @property
     def arn(self):
-        return f'arn:aws:s3:::{self.name}'
+        return f'arn:aws:s3:::{self.name}'.lower()
 
     def upload_file(self, key, data):
         object = s3_res.Object(self.name.lower(), key)
