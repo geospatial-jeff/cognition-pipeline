@@ -35,7 +35,12 @@ def sns(resource):
     def wrapper(f):
         @wraps(f)
         def wrapped_f(self, event, context):
-            data = json.loads(event['Records'][0]['Sns']['Message'])
+            msg = json.loads(event['Records'][0]['Sns']['Message'])['Records'][0]
+            if msg['eventSource'] == 'aws:s3':
+                data = {'bucket': msg['s3']['bucket']['name'],
+                        'key': msg['s3']['object']['key']}
+            else:
+                data = msg
             return f(self, data, context)
         wrapped_f.trigger = 'sns'
         wrapped_f.args = {'arn': resource.arn, 'topic_name': resource.name, 'func_name': f.__name__}
@@ -62,7 +67,7 @@ def bucket_notification(bucket, event_type, destination):
         @wraps(f)
         def wrapped_f(self, event, context):
             if destination.resource == 'sns':
-                msg = event['Records'][0]
+                msg = json.loads(event['Records'][0]['Sns']['Message'])['Records'][0]
                 data = {'bucket': msg['s3']['bucket']['name'],
                         'key': msg['s3']['object']['key']}
             return f(self, data, context)
