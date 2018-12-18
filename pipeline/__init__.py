@@ -42,7 +42,10 @@ class Pipeline(object):
         if self.resources:
             for (k,v) in self.resources.all.items():
                 if 'policy' not in v['Type'].lower():
-                    self.role.add_resource(v.arn)
+                    if 's3' in v['Type'].lower():
+                        self.role.add_resource('arn:aws:s3:::*')
+                    else:
+                        self.role.add_resource(v.arn)
                     self.role.add_action(v.resource.lower() + ':*')
         return self.role.to_dict()
 
