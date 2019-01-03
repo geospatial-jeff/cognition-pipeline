@@ -175,6 +175,10 @@ class DynamoDB(ServerlessResource):
         })
 
     @property
+    def primary_key(self):
+        return self['Properties']['KeySchema'][0]['AttributeName']
+
+    @property
     def arn(self):
         return f"arn:aws:dynamodb:{execution.region}:{execution.accountid}:table/{self.name}"
 
@@ -182,13 +186,17 @@ class DynamoDB(ServerlessResource):
         table = dynamodb.Table(self.name)
         table.put_item(Item=item)
 
-    def delete(self, item):
+    def delete(self, item, key=None):
+        if not key:
+            key = self.primary_key
         table = dynamodb.Table(self.name)
-        table.delete_item(Key={item})
+        table.delete_item(Key={key: item})
 
-    def get(self, item):
+    def get(self, item, key=None):
+        if not key:
+            key = self.primary_key
         table = dynamodb.Table(self.name)
-        result = table.get_item(Key={item})
+        result = table.get_item(Key={key: item})
         return result['Item']
 
     def list(self):
