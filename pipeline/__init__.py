@@ -32,7 +32,8 @@ class Pipeline(object):
         """Return names of pipeline's methods (lambda functions)"""
         base_methods = [x[0] for x in inspect.getmembers(Pipeline, predicate=inspect.isfunction)]
         methods = [x[0] for x in inspect.getmembers(self, predicate=inspect.ismethod) if x[0] not in base_methods]
-        return methods
+        lambdas = [x for x in methods if 'trigger' in dir(getattr(self,x))]
+        return lambdas
 
     def load_functions(self):
         """Load functions into a FunctionGroup"""
