@@ -11,6 +11,7 @@ setup(
     author_email="geospatialjeff@gmail.com",
     packages=find_packages(),
     install_requires=requirements,
+    exclude=["examples"],
     entry_points={
         "console_scripts": [
             "pipeline-create=pipeline._cli:create_pipeline",
