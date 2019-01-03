@@ -23,7 +23,10 @@ def http(path, method, cors):
     def wrapper(f):
         @wraps(f)
         def wrapped_f(self, event, context):
-            data = json.loads(event['body'])
+            if method == "get":
+                data = event['pathParameters']
+            else:
+                data = json.loads(event['body'])
             return f(self, data, context)
         wrapped_f.trigger = 'http'
         wrapped_f.args = {'path': path, 'method': method, 'cors': cors}
