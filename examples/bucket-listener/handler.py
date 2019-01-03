@@ -18,12 +18,14 @@ class TargetBucketTesting123(resources.S3Bucket):
     def __init__(self):
         super().__init__()
 
+bucket = TargetBucketTesting123()
+bucket_listener = BucketListener()
 
 class MyPipeline(Pipeline):
 
     def __init__(self):
         super().__init__(name="bucket-listener-example",
-                         resources=[BucketListener, TargetBucketTesting123])
+                         resources=[bucket, bucket_listener])
 
     @events.bucket_notification(bucket=TargetBucketTesting123(), event_type="s3:ObjectCreated:Put", destination=BucketListener())
     def print_fname(self, event, context):
@@ -31,7 +33,7 @@ class MyPipeline(Pipeline):
 
     @events.sns(resource=BucketListener())
     def read_file(self, event, context):
-        contents = TargetBucketTesting123().read_file(event['key'])
+        contents = bucket.read_file(event['key'])
         print(contents)
 
 pipeline = MyPipeline()
