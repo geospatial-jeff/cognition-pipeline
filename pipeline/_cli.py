@@ -28,6 +28,22 @@ def deploy_pipeline(name):
     sys.path.append(os.getcwd())
     import handler
     handler.deploy()
+    subprocess.call('sls plugin install -n serverless-python-requirements', shell=True)
+    subprocess.call('sls deploy -v', shell=True)
+    subprocess.call('sls info -v --force > outputs.txt', shell=True)
+    parse_output()
+
+def parse_output():
+    with open('outputs.yml', 'w') as outfile:
+        with open('outputs.txt', 'r') as infile:
+            lines = infile.readlines()
+            for idx, line in enumerate(lines):
+                if line == 'Service Information\n' or line == 'Stack Outputs\n':
+                    lines.pop(idx)
+                else:
+                    outfile.write(line)
+    os.remove('outputs.txt')
+
 
 # if __name__ == "__main__":
     # create_pipeline()
