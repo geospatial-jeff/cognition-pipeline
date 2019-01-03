@@ -5,6 +5,7 @@ from .execution import execution
 
 s3_res = boto3.resource('s3')
 sqs_client = boto3.client('sqs')
+dynamodb = boto3.resource('dynamodb')
 
 class ServerlessResource(dict):
 
@@ -147,6 +148,53 @@ class S3Bucket(ServerlessResource):
 
     def download_image(self, key, file):
         s3_res.Bucket(self.name.lower()).download_file(key, file)
+
+class DynamoDB(ServerlessResource):
+
+    def __init__(self):
+        super().__init__()
+        self['Type'] = 'AWS::DynamoDB::Table'
+        self['Properties'] = {'TableName': self.name,
+                              'AttributeDefinitions': [],
+                              'KeySchema': [],
+                              'ProvisionedThroughput': {'ReadCapacityUnits': 1,
+                                                        'WriteCapacityUnits': 1
+                                                        },
+                              }
+
+    def add_attribute(self, name, type):
+        self['Properties']['AttributeDefinitions'].append({
+            "AttributeName": name,
+            "AttributeType": type
+        })
+
+    def add_key(self, name, type):
+        self['Properties']['KeySchema'].append({
+            "AttributeName": name,
+            "KeyType": type
+        })
+
+    @property
+    def arn(self):
+        return f"arn:aws:dynamodb:{execution.region}:{execution.accountid}:table/{self.name}"
+
+    def put(self, item):
+        table = dynamodb.Table(self.name)
+        table.put_item(Item=item)
+
+    def delete(self, item):
+        table = dynamodb.Table(self.name)
+        table.delete_item(Key={item})
+
+    def get(self, item):
+        table = dynamodb.Table(self.name)
+        result = table.get_item(Key={item})
+        return result['Item']
+
+    def list(self, item):
+        table = dynamodb.Table(self.name)
+        result = table.scan()
+        return result['Items']
 
 class ResourceGroup(object):
 
