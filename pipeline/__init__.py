@@ -1,7 +1,8 @@
 import inspect
 import yaml
 
-from .utils import execution, Role
+from .utils import Role
+from .execution import execution
 from . import triggers, functions
 from . import resources as res
 

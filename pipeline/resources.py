@@ -1,7 +1,7 @@
 import boto3
 import json
 
-from .utils import execution
+from .execution import execution
 
 s3_res = boto3.resource('s3')
 sqs_client = boto3.client('sqs')
@@ -156,8 +156,7 @@ class ResourceGroup(object):
     def load_resources(cls, res_list):
         loaded = {}
         for item in res_list:
-            res = item()
-            loaded.update({res.name: res})
+            loaded.update({item.name: item})
         return cls(loaded)
 
     def __getitem__(self, item):
