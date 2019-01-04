@@ -27,7 +27,8 @@ class Function(object):
             response = lambda_client.invoke(FunctionName=long_name,
                                             InvocationType=invocation,
                                             Payload=json.dumps(data))
-            response = json.loads(response['Payload'].read())
+            if invocation == "RequestResponse":
+                response = json.loads(response['Payload'].read())
         return response
 
     def package_function(self):
