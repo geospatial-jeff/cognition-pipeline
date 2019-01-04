@@ -1,10 +1,13 @@
 import boto3
 import json
+import time
 
 from .execution import execution
 
 s3_res = boto3.resource('s3')
 sqs_client = boto3.client('sqs')
+sqs_resource = boto3.resource('sqs')
+sns_client = boto3.client('sns')
 dynamodb = boto3.resource('dynamodb')
 
 class ServerlessResource(dict):
@@ -41,6 +44,11 @@ class SNSTopic(ServerlessResource):
         policy['Properties']['Topics'].append(self.arn)
         policy.update({"DependsOn": [self.name]})
         return policy
+
+    def send_message(self, message):
+        resp = sns_client.publish(TopicArn=self.arn,
+                                  Message=message)
+        return resp
 
 class SNSPolicy(ServerlessResource):
 
@@ -86,9 +94,23 @@ class SQSQueue(ServerlessResource):
     def url(self):
         return f"https://sqs-{execution.region}.amazonaws.com/{execution.accountid}/{self.name}"
 
-    def send_message(self, message):
-        sqs_client.send_message(QueueUrl=self.url,
-                                MessageBody=json.dumps(message))
+    def send_message(self, message, id=None):
+        if id:
+            resp = sqs_client.send_message(QueueUrl=self.url,
+                                           MessageBody=json.dumps(message),
+                                           MessateAttributes={"id": {"DataType": "String", "StringValue": id}})
+        else:
+            resp = sqs_client.send_message(QueueUrl=self.url,
+                                           MessageBody=json.dumps(message))
+        return resp
+
+    def listen(self, timeout=10, wait_time=2):
+        queue = sqs_resource.get_queue_by_name(QueueName=self.name)
+        end_time = time.time() + timeout
+        while time.time() < end_time:
+            messages = queue.receive_messages(WaitTimeSeconds=wait_time)
+            for message in messages:
+                yield message
 
     def attach_policy(self, policy):
         policy['Properties']['PolicyDocument']['Id'] = self.name + '-policy'
