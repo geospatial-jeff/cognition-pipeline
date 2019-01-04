@@ -1,4 +1,5 @@
 import unittest
+import time
 
 from handler import pipeline
 
@@ -8,6 +9,7 @@ class ResourceTestCases(unittest.TestCase):
         self.sns_topic = pipeline.resources['SNSTopicTest']
         self.sqs_queue = pipeline.resources['LoggingQueue']
         self.s3_bucket = pipeline.resources['CognitionPipelineUnittestBucket']
+        self.dynamodb_table = pipeline.resources['DynamoDBTest']
 
     def check_response(self, response):
         self.assertEqual(response['ResponseMetadata']['HTTPStatusCode'], 200)
@@ -42,3 +44,22 @@ class ResourceTestCases(unittest.TestCase):
             except:
                 pass
         self.assertEqual(x,1)
+
+    def test_dynamodb_table_delete(self):
+        self.dynamodb_table.delete('testid')
+        response = self.dynamodb_table.list()
+        self.dynamodb_table.put({'id': 'testid', 'data': 'testing'})
+
+    def test_dynamodb_table_get(self):
+        response = self.dynamodb_table.get('testid')
+        self.assertEqual(response['id'], 'testid')
+        self.assertEqual(response['data'], 'testing')
+
+    def test_dynamodb_table_put(self):
+        data = {'id': 'testid', 'data': 'testing'}
+        self.dynamodb_table.put(data)
+
+    def test_dynamodb_table_list(self):
+        response = self.dynamodb_table.list()
+        self.assertEqual(response[0]['id'], 'testid')
+        self.assertEqual(response[0]['data'], 'testing')
