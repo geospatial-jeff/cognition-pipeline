@@ -62,6 +62,8 @@ class Pipeline(object):
                 destination = v.trigger.info['destination'] #Destination resource
                 event = v.trigger.info['event']
                 prefix = v.trigger.info['prefix']
+                if 'NotificationConfiguration' not in bucket['Properties'].keys():
+                    bucket['Properties'].update({'NotificationConfiguration': {}})
                 if destination.resource == 'sns':
                     # Bucket configuration
                     topic_configuration = [
@@ -72,8 +74,8 @@ class Pipeline(object):
                     ]
                     if prefix:
                         topic_configuration[0].update({'Filter': {'S3Key': {'Rules': [{"Name": "prefix", "Value": prefix}]}}})
-                    bucket['Properties'].update(
-                        {'NotificationConfiguration': {'TopicConfigurations': topic_configuration}})
+                    bucket['Properties']['NotificationConfiguration'].update(
+                        {'TopicConfigurations': topic_configuration})
                     # SNS Policy
                     policy = res.SNSPolicy()
                     destination.attach_policy(policy)
@@ -87,12 +89,15 @@ class Pipeline(object):
                     ]
                     if prefix:
                         queue_configuration[0].update({'Filter': {'S3Key': {'Rules': [{"Name": "prefix", "Value": prefix}]}}})
-                    bucket['Properties'].update(
-                        {'NotificationConfiguration': {'QueueConfigurations': queue_configuration}})
+                    bucket['Properties']['NotificationConfiguration'].update(
+                        {'QueueConfigurations': queue_configuration})
                     # SQS Policy
                     policy = res.SQSPolicy()
                     destination.attach_policy(policy)
-                bucket.update({"DependsOn": [policy.name]})
+                if "DependsOn" in bucket.keys():
+                    bucket["DependsOn"].append(policy.name)
+                else:
+                    bucket.update({"DependsOn": [policy.name]})
                 self.resources.update_resource(bucket.name, bucket)
                 self.resources.add_resource(policy)
 
