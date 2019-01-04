@@ -54,13 +54,13 @@ class MyPipeline(Pipeline):
 
     @events.sns(resource=testing_topic)
     def sns(self, event, context):
-        pass
+        logging_queue.send_message(event, id="sns")
 
     @events.bucket_notification(bucket=testing_bucket, event_type="s3:ObjectCreated:Put", destination=testing_topic, prefix="sns")
     def sns_bucket_notification(self, event, context):
         contents = testing_bucket.read_file(event['key'])
         # Send the contents of file to SQS queue so we can check the output clientside
-        testing_queue.send_message(contents, id="sns_bucket_notification")
+        logging_queue.send_message(contents, id="sns_bucket_notification")
 
     @events.bucket_notification(bucket=testing_bucket, event_type="s3:ObjectCreated:Put", destination=testing_queue, prefix="sqs")
     def sqs_bucket_notification(self, event, context):
@@ -68,6 +68,10 @@ class MyPipeline(Pipeline):
         # Send the contents of file to SQS queue so we can check the output clientside
         logging_queue.send_message(contents, id="sqs_bucket_notification")
 
+    @events.sqs(resource=testing_queue)
+    def sqs(self, event, context):
+        # Send the contents of message to SQS queue so we can check the output clientside
+        logging_queue.send_message(event, id="sqs")
 
 pipeline = MyPipeline()
 
@@ -91,6 +95,9 @@ def sns_bucket_notification(event, context):
 
 def sqs_bucket_notification(event, context):
     pipeline.sqs_bucket_notification(event, context)
+
+def sqs(event, context):
+    pipeline.sqs(event, context)
 
 
 def deploy():

@@ -30,7 +30,9 @@ class MyPipelineTestCases(unittest.TestCase):
 
     def test_sns(self):
         response = self.pipeline.functions['sns'].invoke('testing')
-        self.assertEqual(response['ResponseMetadata']['HTTPStatusCode'], 200)
+        for message in self.pipeline.resources['LoggingQueue'].listen():
+            if message.message_attributes['id']['StringValue'] == 'sns':
+                self.assertEqual(message.body[1:-1], 'testing')
 
     def test_sns_bucket_notification(self):
         outfile = 'data/bucket_notification.txt'
