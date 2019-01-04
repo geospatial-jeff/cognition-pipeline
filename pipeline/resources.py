@@ -115,7 +115,7 @@ class SQSQueue(ServerlessResource):
     def attach_policy(self, policy):
         policy['Properties']['PolicyDocument']['Id'] = self.name + '-policy'
         policy['Properties']['PolicyDocument']['Statement'][0]['Resource'] = self.arn
-        policy['Properties']['Queues'].append(self.url)
+        policy['Properties']['Queues'].append({'Ref': self.name})
         policy.update({"DependsOn": [self.name]})
         return policy
 
