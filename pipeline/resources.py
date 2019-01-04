@@ -98,7 +98,7 @@ class SQSQueue(ServerlessResource):
         if id:
             resp = sqs_client.send_message(QueueUrl=self.url,
                                            MessageBody=json.dumps(message),
-                                           MessateAttributes={"id": {"DataType": "String", "StringValue": id}})
+                                           MessageAttributes={"id": {"DataType": "String", "StringValue": id}})
         else:
             resp = sqs_client.send_message(QueueUrl=self.url,
                                            MessageBody=json.dumps(message))
