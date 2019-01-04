@@ -65,7 +65,7 @@ def sqs(resource):
         return wrapped_f
     return wrapper
 
-def bucket_notification(bucket, event_type, destination):
+def bucket_notification(bucket, event_type, destination, prefix=None):
 
     def wrapper(f):
         @wraps(f)
@@ -76,6 +76,6 @@ def bucket_notification(bucket, event_type, destination):
                         'key': msg['s3']['object']['key']}
             return f(self, data, context)
         wrapped_f.trigger = 'bucket_notification'
-        wrapped_f.args = {'bucket': bucket, 'event': event_type, 'destination': destination}
+        wrapped_f.args = {'bucket': bucket, 'event': event_type, 'destination': destination, 'prefix': prefix}
         return wrapped_f
     return wrapper

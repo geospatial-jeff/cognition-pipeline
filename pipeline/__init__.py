@@ -61,6 +61,7 @@ class Pipeline(object):
                 bucket = v.trigger.info['bucket'] #Bucket resource
                 destination = v.trigger.info['destination'] #Destination resource
                 event = v.trigger.info['event']
+                prefix = v.trigger.info['prefix']
                 if destination.resource == 'sns':
                     # Bucket configuration
                     topic_configuration = [
@@ -69,6 +70,8 @@ class Pipeline(object):
                             "Event": event,
                         }
                     ]
+                    if prefix:
+                        topic_configuration[0].update({'Filter': {'S3Key': {'Rules': [{"Name": "prefix", "Value": prefix}]}}})
                     bucket['Properties'].update(
                         {'NotificationConfiguration': {'TopicConfigurations': topic_configuration}})
                     # SNS Policy
@@ -82,6 +85,7 @@ class Pipeline(object):
                             "Event": event,
                         }
                     ]
+
                     bucket['Properties'].update(
                         {'NotificationConfiguration': {'QueueConfigurations': queue_configuration}})
                     # SQS Policy
