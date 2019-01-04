@@ -71,6 +71,10 @@ class Function(object):
                     contents = f.read()
                     resource.upload_file(key, contents)
             response = {'bucket': resource.name, 'key': key}
+        elif self.trigger.name == 'sqs':
+            import handler
+            resource = getattr(handler, self.func.args['queue_name'])()
+            response = resource.send_message(data)
         return response
 
     def package_function(self):

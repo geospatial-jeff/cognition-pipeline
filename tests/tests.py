@@ -59,3 +59,9 @@ class MyPipelineTestCases(unittest.TestCase):
                     # Strip quotes from message
                     self.assertEqual(message.body[1:-1], contents)
                     message.delete()
+
+    def test_sqs(self):
+        response = self.pipeline.functions['sqs'].invoke('testing')
+        for message in self.pipeline.resources['LoggingQueue'].listen():
+            if message.message_attributes['id']['StringValue'] == 'sqs':
+                self.assertEqual(message.body[1:-1], 'testing')
