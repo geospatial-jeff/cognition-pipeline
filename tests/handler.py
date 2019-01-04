@@ -73,6 +73,11 @@ class MyPipeline(Pipeline):
         # Send the contents of message to SQS queue so we can check the output clientside
         logging_queue.send_message(event, id="sqs")
 
+    @events.invoke
+    def sqs_aggregate(self, event, context):
+        for x in event['sequence']:
+            logging_queue.send_message(str(x), id="sqs_aggregate")
+
 pipeline = MyPipeline()
 
 def invoke(event, context):
@@ -98,6 +103,9 @@ def sqs_bucket_notification(event, context):
 
 def sqs(event, context):
     pipeline.sqs(event, context)
+
+def sqs_aggregate(event, context):
+    pipeline.sqs_aggregate(event, context)
 
 
 def deploy():

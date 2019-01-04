@@ -67,3 +67,14 @@ class MyPipelineTestCases(unittest.TestCase):
         for message in self.pipeline.resources['LoggingQueue'].listen():
             if message.message_attributes['id']['StringValue'] == 'sqs':
                 self.assertEqual(message.body[1:-1], 'testing')
+
+    def test_sqs_aggregate(self):
+        seq = list(range(10))
+        self.pipeline.functions['sqs_aggregate'].invoke({'sequence': seq})
+        values = []
+        for message in self.pipeline.resources['LoggingQueue'].listen():
+            if message.message_attributes['id']['StringValue'] == 'sqs_aggregate':
+                value = int(message.body[1:-1])
+                values.append(value)
+                message.delete()
+        self.assertEqual(sum(seq), sum(values))
