@@ -30,9 +30,13 @@ class MyPipelineTestCases(unittest.TestCase):
 
     def test_sns(self):
         response = self.pipeline.functions['sns'].invoke('testing')
+        idx = 0
         for message in self.pipeline.resources['LoggingQueue'].listen():
             if message.message_attributes['id']['StringValue'] == 'sns':
                 self.assertEqual(message.body[1:-1], 'testing')
+                message.delete()
+                idx+=1
+        self.assertGreater(idx, 0)
 
     def test_sns_bucket_notification(self):
         outfile = 'data/bucket_notification.txt'
@@ -40,6 +44,7 @@ class MyPipelineTestCases(unittest.TestCase):
         response = self.pipeline.functions['sns_bucket_notification'].invoke(outfile, key=key)
         self.assertEqual(response['bucket'], "CognitionPipelineUnittestBucket")
         self.assertEqual(response['key'], key)
+        idx = 0
         for message in self.pipeline.resources['LoggingQueue'].listen():
             if message.message_attributes['id']['StringValue'] == 'sns_bucket_notification':
                 with open(outfile, 'r') as f:
@@ -47,6 +52,9 @@ class MyPipelineTestCases(unittest.TestCase):
                     # Strip quotes from message
                     self.assertEqual(message.body[1:-1], contents)
                     message.delete()
+                    idx+=1
+        self.assertGreater(idx, 0)
+
 
     def test_sqs_bucket_notification(self):
         outfile = 'data/bucket_notification.txt'
@@ -54,6 +62,7 @@ class MyPipelineTestCases(unittest.TestCase):
         response = self.pipeline.functions['sqs_bucket_notification'].invoke(outfile, key=key)
         self.assertEqual(response['bucket'], "CognitionPipelineUnittestBucket")
         self.assertEqual(response['key'], key)
+        idx = 0
         for message in self.pipeline.resources['LoggingQueue'].listen():
             if message.message_attributes['id']['StringValue'] == 'sqs_bucket_notification':
                 with open(outfile, 'r') as f:
@@ -61,20 +70,29 @@ class MyPipelineTestCases(unittest.TestCase):
                     # Strip quotes from message
                     self.assertEqual(message.body[1:-1], contents)
                     message.delete()
+                    idx+=1
+        self.assertGreater(idx, 0)
 
     def test_sqs(self):
-        response = self.pipeline.functions['sqs'].invoke('testing')
+        self.pipeline.functions['sqs'].invoke('testing')
+        idx = 0
         for message in self.pipeline.resources['LoggingQueue'].listen():
             if message.message_attributes['id']['StringValue'] == 'sqs':
                 self.assertEqual(message.body[1:-1], 'testing')
+                message.delete()
+                idx+=1
+        self.assertGreater(idx, 0)
 
     def test_sqs_aggregate(self):
         seq = list(range(10))
         self.pipeline.functions['sqs_aggregate'].invoke({'sequence': seq})
         values = []
+        idx = 0
         for message in self.pipeline.resources['LoggingQueue'].listen():
             if message.message_attributes['id']['StringValue'] == 'sqs_aggregate':
                 value = int(message.body[1:-1])
                 values.append(value)
                 message.delete()
+                idx+=1
         self.assertEqual(sum(seq), sum(values))
+        self.assertGreater(idx, 0)
