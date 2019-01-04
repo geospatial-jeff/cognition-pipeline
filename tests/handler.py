@@ -12,6 +12,11 @@ class SQSQueueTest(resources.SQSQueue):
     def __init__(self):
         super().__init__()
 
+class SQSQueueTest2(resources.SQSQueue):
+
+    def __init__(self):
+        super().__init__()
+
 class LoggingQueue(resources.SQSQueue):
 
     def __init__(self):
@@ -24,6 +29,7 @@ class CognitionPipelineUnittestBucket(resources.S3Bucket):
 
 testing_topic = SNSTopicTest()
 testing_queue = SQSQueueTest()
+testing_queue2 = SQSQueueTest2()
 logging_queue = LoggingQueue()
 testing_bucket = CognitionPipelineUnittestBucket()
 
@@ -31,7 +37,7 @@ class MyPipeline(Pipeline):
 
     def __init__(self):
         super().__init__(name="pipeline-unittests",
-                         resources=[testing_topic, testing_bucket, testing_queue, logging_queue])
+                         resources=[testing_topic, testing_bucket, testing_queue, testing_queue2, logging_queue])
 
     @events.invoke
     def invoke(self, event, context):
@@ -68,7 +74,7 @@ class MyPipeline(Pipeline):
         # Send the contents of file to SQS queue so we can check the output clientside
         logging_queue.send_message(contents, id="sqs_bucket_notification")
 
-    @events.sqs(resource=testing_queue)
+    @events.sqs(resource=testing_queue2)
     def sqs(self, event, context):
         # Send the contents of message to SQS queue so we can check the output clientside
         logging_queue.send_message(event, id="sqs")
