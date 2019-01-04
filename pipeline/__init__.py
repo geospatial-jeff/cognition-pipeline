@@ -85,7 +85,8 @@ class Pipeline(object):
                             "Event": event,
                         }
                     ]
-
+                    if prefix:
+                        queue_configuration[0].update({'Filter': {'S3Key': {'Rules': [{"Name": "prefix", "Value": prefix}]}}})
                     bucket['Properties'].update(
                         {'NotificationConfiguration': {'QueueConfigurations': queue_configuration}})
                     # SQS Policy
