@@ -1,7 +1,10 @@
 import boto3
 import json
 from functools import wraps
+
 from . import triggers
+from .execution import execution
+from pipeline.outputs import Outputs
 
 lambda_client = boto3.client('lambda')
 
@@ -9,17 +12,22 @@ class Function(object):
 
     """Object representing an AWS Lambda function and its trigger"""
 
-    def __init__(self, func):
+    def __init__(self, func, pipeline_name):
         self.func = func
+        self.pipeline_name = pipeline_name
         self.name = func.__name__
         self.trigger = getattr(triggers, func.trigger.upper())(func.args)
 
 
-    def invoke(self, data, invocation="Event"):
+    def invoke(self, data, invocation="RequestResponse"):
         """Invoke the lambda function"""
-        response = lambda_client.invoke(FunctionName=self.name,
-                                        InvocationType=invocation,
-                                        Payload=json.dumps(data))
+        outputs = Outputs.load('outputs.yml')
+        if self.trigger.name == 'lambda':
+            long_name = f"{self.pipeline_name}-{execution.stage}-{self.name}"
+            response = lambda_client.invoke(FunctionName=long_name,
+                                            InvocationType=invocation,
+                                            Payload=json.dumps(data))
+            response = json.loads(response['Payload'].read())
         return response
 
     def package_function(self):

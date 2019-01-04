@@ -37,7 +37,7 @@ class Pipeline(object):
 
     def load_functions(self):
         """Load functions into a FunctionGroup"""
-        return functions.FunctionGroup({fname:functions.Function(getattr(self, fname)) for fname in self.lambdas()})
+        return functions.FunctionGroup({fname:functions.Function(getattr(self, fname), self.name) for fname in self.lambdas()})
 
     def define_role(self):
         """Define the pipeline's IAM role based on available resources"""
