@@ -22,6 +22,13 @@ class LoggingQueue(resources.SQSQueue):
     def __init__(self):
         super().__init__()
 
+class DynamoDBTest(resources.DynamoDB):
+
+    def __init__(self):
+        super().__init__()
+        self.add_attribute('id', 'S')
+        self.add_key('id', 'HASH')
+
 class CognitionPipelineUnittestBucket(resources.S3Bucket):
 
     def __init__(self):
@@ -31,13 +38,15 @@ testing_topic = SNSTopicTest()
 testing_queue = SQSQueueTest()
 testing_queue2 = SQSQueueTest2()
 logging_queue = LoggingQueue()
+testing_table = DynamoDBTest()
 testing_bucket = CognitionPipelineUnittestBucket()
 
 class MyPipeline(Pipeline):
 
     def __init__(self):
         super().__init__(name="pipeline-unittests",
-                         resources=[testing_topic, testing_bucket, testing_queue, testing_queue2, logging_queue])
+                         resources=[testing_topic, testing_bucket, testing_queue,
+                                    testing_queue2, logging_queue, testing_table])
 
     @events.invoke
     def invoke(self, event, context):
