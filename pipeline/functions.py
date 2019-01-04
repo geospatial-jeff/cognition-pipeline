@@ -25,7 +25,7 @@ class Function(object):
         self.trigger = getattr(triggers, func.trigger.upper())(func.args)
 
 
-    def invoke(self, data, invocation="RequestResponse"):
+    def invoke(self, data, invocation="RequestResponse", **kwargs):
         """Invoke the lambda function"""
         outputs = Outputs.load('outputs.yml')
         if self.trigger.name == 'lambda':
@@ -60,7 +60,10 @@ class Function(object):
         elif self.trigger.name == 'bucket_notification':
             import handler
             resource = getattr(handler, self.func.args['bucket'].name)()
-            key = os.path.split(data)[-1]
+            if 'key'in kwargs.keys():
+                key = kwargs['key']
+            else:
+                key = os.path.split(data)[-1]
             if data.endswith('.tif') or data.endswith('.jpg'):
                 resource.upload_image(key, data)
             else:
