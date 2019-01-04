@@ -80,7 +80,10 @@ def bucket_notification(bucket, event_type, destination, prefix=None):
             elif destination.resource == 'sqs':
                 outputs = []
                 for record in event['Records']:
-                    data = json.loads(record['body'])
+                    body = json.loads(record['body'])
+                    data = {'bucket': body['Records'][0]['s3']['bucket']['name'],
+                            'key': body['Records'][0]['s3']['object']['key']
+                            }
                     output = f(self, data, context)
                     outputs.append(output)
                 return outputs
