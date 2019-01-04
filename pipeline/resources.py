@@ -108,7 +108,7 @@ class SQSQueue(ServerlessResource):
         queue = sqs_resource.get_queue_by_name(QueueName=self.name)
         end_time = time.time() + timeout
         while time.time() < end_time:
-            messages = queue.receive_messages(WaitTimeSeconds=wait_time)
+            messages = queue.receive_messages(WaitTimeSeconds=wait_time, MessageAttributeNames=['id'])
             for message in messages:
                 yield message
 

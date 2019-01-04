@@ -53,6 +53,21 @@ class Function(object):
                 response = r.content.decode('utf-8')
             else:
                 raise InvocationError("Request returned with 404 code")
+        elif self.trigger.name == 'sns':
+            import handler
+            resource = getattr(handler, self.func.args['topic_name'])()
+            response = resource.send_message(data)
+        elif self.trigger.name == 'bucket_notification':
+            import handler
+            resource = getattr(handler, self.func.args['bucket'].name)()
+            key = os.path.split(data)[-1]
+            if data.endswith('.tif') or data.endswith('.jpg'):
+                resource.upload_image(key, data)
+            else:
+                with open(data, 'r') as f:
+                    contents = f.read()
+                    resource.upload_file(key, contents)
+            response = {'bucket': resource.name, 'key': key}
         return response
 
     def package_function(self):
