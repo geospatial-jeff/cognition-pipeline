@@ -32,13 +32,28 @@ class MyPipelineTestCases(unittest.TestCase):
         response = self.pipeline.functions['sns'].invoke('testing')
         self.assertEqual(response['ResponseMetadata']['HTTPStatusCode'], 200)
 
-    def test_sns_s3(self):
+    def test_sns_bucket_notification(self):
         outfile = 'data/bucket_notification.txt'
-        response = self.pipeline.functions['sns_bucket_notification'].invoke(outfile)
-        self.assertEqual(response['bucket'], "CognitionPipelineTestBucket")
-        self.assertEqual(response['key'], os.path.split(outfile)[-1])
-        for message in self.pipeline.resources['TestingQueue'].listen():
+        key = "sns/notification.txt"
+        response = self.pipeline.functions['sns_bucket_notification'].invoke(outfile, key=key)
+        self.assertEqual(response['bucket'], "CognitionPipelineUnittestBucket")
+        self.assertEqual(response['key'], key)
+        for message in self.pipeline.resources['LoggingQueue'].listen():
             if message.message_attributes['id']['StringValue'] == 'sns_bucket_notification':
+                with open(outfile, 'r') as f:
+                    contents = f.read()
+                    # Strip quotes from message
+                    self.assertEqual(message.body[1:-1], contents)
+                    message.delete()
+
+    def test_sqs_bucket_notification(self):
+        outfile = 'data/bucket_notification.txt'
+        key = "sqs/notification.txt"
+        response = self.pipeline.functions['sqs_bucket_notification'].invoke(outfile, key=key)
+        self.assertEqual(response['bucket'], "CognitionPipelineUnittestBucket")
+        self.assertEqual(response['key'], key)
+        for message in self.pipeline.resources['LoggingQueue'].listen():
+            if message.message_attributes['id']['StringValue'] == 'sqs_bucket_notification':
                 with open(outfile, 'r') as f:
                     contents = f.read()
                     # Strip quotes from message
