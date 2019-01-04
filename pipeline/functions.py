@@ -1,12 +1,18 @@
 import boto3
 import json
+import os
+import re
 from functools import wraps
+import requests
 
 from . import triggers
 from .execution import execution
 from pipeline.outputs import Outputs
 
 lambda_client = boto3.client('lambda')
+
+class InvocationError(BaseException):
+    pass
 
 class Function(object):
 
@@ -29,6 +35,24 @@ class Function(object):
                                             Payload=json.dumps(data))
             if invocation == "RequestResponse":
                 response = json.loads(response['Payload'].read())
+        elif self.trigger.name == 'http':
+            endpoint = outputs.endpoint()
+            path = self.trigger.template()['events'][0]['http']['path']
+            method = self.trigger.template()['events'][0]['http']['method']
+            full_path = os.path.join(endpoint, path)
+            # there is a much better way of doing this
+            if '{' and '}' in full_path:
+                regex = re.compile('{(.*?)\}')
+                match = regex.findall(full_path)[0]
+                full_path = full_path.replace("{"+match+"}", data)
+            if method == 'get':
+                r = requests.get(full_path)
+            elif method == 'post':
+                r = requests.post(full_path, data)
+            if r.status_code == 200:
+                response = r.content.decode('utf-8')
+            else:
+                raise InvocationError("Request returned with 404 code")
         return response
 
     def package_function(self):

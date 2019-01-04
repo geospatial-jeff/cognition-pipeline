@@ -15,10 +15,31 @@ class MyPipeline(Pipeline):
                     'body': json.dumps(event)}
         return response
 
+    @events.http(path="get/{id}", method="get", cors="true")
+    def http_get(self, event, context):
+        response = {'statusCode': '200',
+                    'body': event['id']}
+        return response
+
+    @events.http(path="post", method="post", cors="true")
+    def http_post(self, event, context):
+        response = {'statusCode': '200',
+                    'body': json.dumps(event)}
+        return response
+
+
 pipeline = MyPipeline()
 
 def invoke(event, context):
     resp = pipeline.invoke(event, context)
+    return resp
+
+def http_get(event, context):
+    resp = pipeline.http_get(event, context)
+    return resp
+
+def http_post(event, context):
+    resp = pipeline.http_post(event, context)
     return resp
 
 def deploy():
