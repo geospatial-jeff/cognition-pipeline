@@ -56,10 +56,12 @@ def sqs(resource):
     def wrapper(f):
         @wraps(f)
         def wrapped_f(self, event, context):
+            outputs = []
             for record in event['Records']:
                 data = json.loads(record['body'])
                 output = f(self, data, context)
-            return
+                outputs.append(output)
+            return outputs
         wrapped_f.trigger = 'sqs'
         wrapped_f.args = {'arn': resource.arn, 'url': resource.url, 'queue_name': resource.name}
         return wrapped_f
@@ -74,13 +76,14 @@ def bucket_notification(bucket, event_type, destination, prefix=None):
                 msg = json.loads(event['Records'][0]['Sns']['Message'])['Records'][0]
                 data = {'bucket': msg['s3']['bucket']['name'],
                         'key': msg['s3']['object']['key']}
+                return f(self, data, context)
             elif destination.resource == 'sqs':
+                outputs = []
                 for record in event['Records']:
-                    body = json.loads(record['body'])
-                    data = {'bucket': body['Records'][0]['s3']['bucket']['name'],
-                            'key': body['Records'][0]['s3']['object']['key']
-                            }
-            return f(self, data, context)
+                    data = json.loads(record['body'])
+                    output = f(self, data, context)
+                    outputs.append(output)
+                return outputs
         wrapped_f.trigger = 'bucket_notification'
         wrapped_f.args = {'bucket': bucket, 'event': event_type, 'destination': destination, 'prefix': prefix}
         return wrapped_f
