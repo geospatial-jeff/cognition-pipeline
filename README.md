@@ -40,3 +40,7 @@ def hello_world(event, context):
     - **Services:** Write importable python functions which may be imported into your Pipeline.
 4. Generate a Serverless Framework `serverless.yml` configuration file  \
 ```pipeline-deploy <new-directory>```
+
+## Testing
+1. Deploy test pipeline to AWS with `pipeline-deploy tests`
+2. Run the unittests in `tests/tests.py`
