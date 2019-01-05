@@ -113,7 +113,7 @@ class Function_HTTP(Function):
             r = requests.get(full_path)
         elif self.func.args['method'] == 'post':
             r = requests.post(full_path, data)
-        if r.status_code == 200:
+        if r.status_code != 404:
             response = r.content.decode('utf-8')
             return response
         else:
