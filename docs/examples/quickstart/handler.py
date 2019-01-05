@@ -5,26 +5,26 @@ from pipeline import Pipeline, events, resources
 
 """Define resources"""
 
-class MyTable(resources.DynamoDB):
+class QuickstartTable(resources.DynamoDB):
 
     def __init__(self):
         super().__init__()
         self.add_attribute('id', 'S')
         self.add_key('id', 'HASH')
 
-table = MyTable()
+table = QuickstartTable()
 
 """Build pipeline"""
 
 class MyFirstPipeline(Pipeline):
 
     def __init__(self):
-        super().__init__(name="my-first-pipeline",
+        super().__init__(name="quickstart-pipeline",
                          resources=[table])
 
     @events.http(method="get", path="helloworld/{message}", cors="true")
     def hello_world(self, event, context):
-        item = {'id': str(uuid.uuid1),
+        item = {'id': str(uuid.uuid1()),
                 'message': event['message']
                 }
         # Use helper method
@@ -42,13 +42,8 @@ pipeline = MyFirstPipeline()
 
 """Lambda handlers"""
 
-def hello_world(event, context):
-    pipeline.hello_world(event, context)
-
-
-def list_messages(event, context):
-    resp = pipeline.list_messages(event, context)
-    return resp
+hello_world = pipeline.hello_world
+list_messages = pipeline.list_messages
 
 """Deploy"""
 
