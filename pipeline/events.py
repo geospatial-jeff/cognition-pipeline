@@ -18,11 +18,13 @@ def invoke(f):
     wrapper.args = {}
     return wrapper
 
-def http(path, method, cors):
+def http(path, method, cors, legacy=False):
 
     def wrapper(f):
         @wraps(f)
         def wrapped_f(self, event, context):
+            if legacy:
+                return f(self, event, context)
             if method == "get":
                 data = event['pathParameters']
             else:
@@ -33,11 +35,13 @@ def http(path, method, cors):
         return wrapped_f
     return wrapper
 
-def sns(resource):
+def sns(resource, legacy=False):
 
     def wrapper(f):
         @wraps(f)
         def wrapped_f(self, event, context):
+            if legacy:
+                return f(self, event, context)
             record = event['Records'][0]
             if record['EventSource'] == 'aws:sns':
                 data = record['Sns']['Message']
@@ -51,12 +55,17 @@ def sns(resource):
         return wrapped_f
     return wrapper
 
-def sqs(resource):
+def sqs(resource, legacy=False):
 
     def wrapper(f):
         @wraps(f)
         def wrapped_f(self, event, context):
             outputs = []
+            if legacy:
+                for record in event['Records']:
+                    output = f(self, record, context)
+                    outputs.append(output)
+                return outputs
             for record in event['Records']:
                 data = json.loads(record['body'])
                 output = f(self, data, context)
@@ -67,18 +76,25 @@ def sqs(resource):
         return wrapped_f
     return wrapper
 
-def bucket_notification(bucket, event_type, destination, prefix=None):
+def bucket_notification(bucket, event_type, destination, prefix=None, legacy=False):
 
     def wrapper(f):
         @wraps(f)
         def wrapped_f(self, event, context):
             if destination.resource == 'sns':
+                if legacy:
+                    return f(self, event, context)
                 msg = json.loads(event['Records'][0]['Sns']['Message'])['Records'][0]
                 data = {'bucket': msg['s3']['bucket']['name'],
                         'key': msg['s3']['object']['key']}
                 return f(self, data, context)
             elif destination.resource == 'sqs':
                 outputs = []
+                if legacy:
+                    for record in event['Records']:
+                        output = f(self, record, context)
+                        outputs.append(output)
+                    return outputs
                 for record in event['Records']:
                     body = json.loads(record['body'])
                     data = {'bucket': body['Records'][0]['s3']['bucket']['name'],
