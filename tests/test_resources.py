@@ -48,6 +48,7 @@ class ResourceTestCases(unittest.TestCase):
     def test_dynamodb_table_delete(self):
         self.dynamodb_table.delete('testid')
         response = self.dynamodb_table.list()
+        self.assertEqual(len(response), 0)
         self.dynamodb_table.put({'id': 'testid', 'data': 'testing'})
 
     def test_dynamodb_table_get(self):
