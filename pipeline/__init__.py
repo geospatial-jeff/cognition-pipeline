@@ -62,11 +62,11 @@ class Pipeline(object):
         # so we aren't creating resource templates during runtime.
         # A lot of this could be abstracted to the resource object itself
         for (k,v) in self.functions.all.items():
-            if v.trigger.name == 'bucket_notification':
-                bucket = v.trigger.info['bucket'] #Bucket resource
-                destination = v.trigger.info['destination'] #Destination resource
-                event = v.trigger.info['event']
-                prefix = v.trigger.info['prefix']
+            if v.trigger == 'bucket_notification':
+                bucket = k.args['bucket'] #Bucket resource
+                destination = k.args['destination'] #Destination resource
+                event = k.args['event']
+                prefix = k.args['prefix']
                 if 'NotificationConfiguration' not in bucket['Properties'].keys():
                     bucket['Properties'].update({'NotificationConfiguration': {}})
                 if destination.resource == 'sns':
