@@ -17,8 +17,8 @@ class Pipeline(object):
         - Services may be imported into the pipeline
     """
 
-    def __init__(self, name, resources=None, services=None):
-        self.name = name
+    def __init__(self, resources=None, services=None):
+        self.name = self.__class__.__name__
         self.execution = execution
         self.functions = self.load_functions()
         if resources:

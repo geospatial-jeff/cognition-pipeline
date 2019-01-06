@@ -18,11 +18,10 @@ table = MyFirstTable()
 
 """Create pipeline"""
 
-class MyPipeline(Pipeline):
+class SimpleRestAPI(Pipeline):
 
     def __init__(self):
-        super().__init__(name="simple-rest-api",
-                         resources=[table])
+        super().__init__(resources=[table])
 
     @events.http(path="todos", method="post", cors="true")
     def create(self, event, context):
@@ -67,26 +66,16 @@ class MyPipeline(Pipeline):
         response = {'statusCode': 200}
         return response
 
-pipeline = MyPipeline()
+pipeline = SimpleRestAPI()
 
 """Lambda handlers"""
 
-def create(event, context):
-    resp = pipeline.create(event, context)
-    return resp
+create = pipeline.create
+list = pipeline.list
+get = pipeline.get
+delete = pipeline.delete
 
-def list(event, context):
-    resp = pipeline.list(event, context)
-    return resp
-
-def get(event, context):
-    resp = pipeline.get(event, context)
-    return resp
-
-def delete(event, context):
-    resp = pipeline.delete(event, context)
-    return resp
-
+"""Deploy pipeline"""
 
 def deploy():
     pipeline.deploy()

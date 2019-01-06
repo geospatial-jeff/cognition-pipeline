@@ -16,11 +16,10 @@ table = QuickstartTable()
 
 """Build pipeline"""
 
-class MyFirstPipeline(Pipeline):
+class QuickstartPipeline(Pipeline):
 
     def __init__(self):
-        super().__init__(name="quickstart-pipeline",
-                         resources=[table])
+        super().__init__(resources=[table])
 
     @events.http(method="get", path="helloworld/{message}", cors="true")
     def hello_world(self, event, context):
@@ -38,7 +37,7 @@ class MyFirstPipeline(Pipeline):
         return messages
 
 
-pipeline = MyFirstPipeline()
+pipeline = QuickstartPipeline()
 
 """Lambda handlers"""
 

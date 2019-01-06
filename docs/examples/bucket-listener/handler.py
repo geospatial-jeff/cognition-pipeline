@@ -21,11 +21,10 @@ class TargetBucketTesting123(resources.S3Bucket):
 bucket = TargetBucketTesting123()
 bucket_listener = BucketListener()
 
-class MyPipeline(Pipeline):
+class BucketListenerExample(Pipeline):
 
     def __init__(self):
-        super().__init__(name="bucket-listener-example",
-                         resources=[bucket, bucket_listener])
+        super().__init__(resources=[bucket, bucket_listener])
 
     @events.bucket_notification(bucket=TargetBucketTesting123(), event_type="s3:ObjectCreated:Put", destination=BucketListener())
     def print_fname(self, event, context):
@@ -36,16 +35,13 @@ class MyPipeline(Pipeline):
         contents = bucket.read_file(event['key'])
         print(contents)
 
-pipeline = MyPipeline()
+pipeline = BucketListenerExample()
 
 
 """Lambda handlers"""
 
-def print_fname(event, context):
-    pipeline.print_fname(event, context)
-
-def read_file(event, context):
-    pipeline.read_file(event, context)
+print_fname = pipeline.print_fname
+read_file = pipeline.read_file
 
 
 """Deploy pipeline"""

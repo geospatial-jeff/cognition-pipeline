@@ -41,11 +41,10 @@ logging_queue = LoggingQueue()
 testing_table = DynamoDBTest()
 testing_bucket = CognitionPipelineUnittestBucket()
 
-class MyPipeline(Pipeline):
+class PipelineUnittests(Pipeline):
 
     def __init__(self):
-        super().__init__(name="pipeline-unittests",
-                         resources=[testing_topic, testing_bucket, testing_queue,
+        super().__init__(resources=[testing_topic, testing_bucket, testing_queue,
                                     testing_queue2, logging_queue, testing_table])
 
     @events.invoke
@@ -93,35 +92,20 @@ class MyPipeline(Pipeline):
         for x in event['sequence']:
             logging_queue.send_message(str(x), id="sqs_aggregate")
 
-pipeline = MyPipeline()
+pipeline = PipelineUnittests()
 
-def invoke(event, context):
-    resp = pipeline.invoke(event, context)
-    return resp
+"""Lambda handlers"""
 
-def http_get(event, context):
-    resp = pipeline.http_get(event, context)
-    return resp
+invoke = pipeline.invoke
+http_get = pipeline.http_get
+http_post = pipeline.http_post
+sns = pipeline.sns
+sns_bucket_notification = pipeline.sns_bucket_notification
+sqs_bucket_notification = pipeline.sqs_bucket_notification
+sqs = pipeline.sqs
+sqs_aggregate = pipeline.sqs_aggregate
 
-def http_post(event, context):
-    resp = pipeline.http_post(event, context)
-    return resp
-
-def sns(event, context):
-    pipeline.sns(event, context)
-
-def sns_bucket_notification(event, context):
-    pipeline.sns_bucket_notification(event, context)
-
-def sqs_bucket_notification(event, context):
-    pipeline.sqs_bucket_notification(event, context)
-
-def sqs(event, context):
-    pipeline.sqs(event, context)
-
-def sqs_aggregate(event, context):
-    pipeline.sqs_aggregate(event, context)
-
+"""Deploy pipeline"""
 
 def deploy():
     pipeline.deploy()
