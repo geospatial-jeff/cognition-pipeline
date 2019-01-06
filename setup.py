@@ -5,7 +5,7 @@ with open("./requirements.txt") as reqs:
 
 setup(
     name="cognition_pipeline",
-    version="0.1",
+    version="1.0",
     description="Build and deploy AWS serverless pipelines",
     author="Jeff Albrecht",
     author_email="geospatialjeff@gmail.com",
