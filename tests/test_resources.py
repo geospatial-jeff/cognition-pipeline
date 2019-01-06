@@ -1,7 +1,7 @@
 import unittest
 import time
 
-from handler import PipelineUnittests
+from handler import pipeline
 
 class ResourceTestCases(unittest.TestCase):
 
