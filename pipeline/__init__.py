@@ -56,17 +56,17 @@ class Pipeline(object):
                     self.role.add_action(v.resource.lower() + ':*')
         return self.role.to_dict()
 
-    def deploy(self):
+    def deploy(self, package=False):
         """Generate a serverless.yml file of the pipeline which may be deployed with Serverless Framework"""
         # Bucket notifications require setting up some additional policies.  Do this outside scope of lambda execution
         # so we aren't creating resource templates during runtime.
         # A lot of this could be abstracted to the resource object itself
         for (k,v) in self.functions.all.items():
             if v.trigger == 'bucket_notification':
-                bucket = k.args['bucket'] #Bucket resource
-                destination = k.args['destination'] #Destination resource
-                event = k.args['event']
-                prefix = k.args['prefix']
+                bucket = v.func.args['bucket'] #Bucket resource
+                destination = v.func.args['destination'] #Destination resource
+                event = v.func.args['event']
+                prefix = v.func.args['prefix']
                 if 'NotificationConfiguration' not in bucket['Properties'].keys():
                     bucket['Properties'].update({'NotificationConfiguration': {}})
                 if destination.resource == 'sns':
@@ -119,6 +119,11 @@ class Pipeline(object):
             "functions": self.functions.to_dict(),
             "plugins": ["serverless-python-requirements"]
         }
+
+        if package:
+            sls_dict.update({"package": {"artifact": package}})
+        else:
+            sls_dict.update({'plugins': ["serverless-python-requirements"]})
 
         if self.resources:
             sls_dict.update({"resources": self.resources.to_dict()})
