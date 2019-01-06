@@ -22,16 +22,18 @@ def create_pipeline(name):
 
 @click.command()
 @click.argument("name")
-def deploy_pipeline(name):
+@click.option("--dry-run", default=False, is_flag=True)
+def deploy_pipeline(name, dry_run):
     """Deploy the pipeline in a specified directory (creates serverless.yml)"""
     os.chdir(name)
     sys.path.append(os.getcwd())
     import handler
     handler.deploy()
-    subprocess.call('sls plugin install -n serverless-python-requirements', shell=True)
-    subprocess.call('sls deploy -v', shell=True)
-    subprocess.call('sls info -v --force > outputs.txt', shell=True)
-    parse_output()
+    if not dry_run:
+        subprocess.call('sls plugin install -n serverless-python-requirements', shell=True)
+        subprocess.call('sls deploy -v', shell=True)
+        subprocess.call('sls info -v --force > outputs.txt', shell=True)
+        parse_output()
 
 def parse_output():
     with open('outputs.yml', 'w') as outfile:
