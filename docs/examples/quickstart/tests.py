@@ -2,12 +2,12 @@ import unittest
 import json
 import time
 
-from handler import pipeline
+from handler import QuickstartPipeline
 
 class MyFirstPipelineTestCases(unittest.TestCase):
 
     def setUp(self):
-        self.pipeline = pipeline
+        self.pipeline = QuickstartPipeline()
 
     def test_hello_world(self):
         func = self.pipeline.functions['hello_world']

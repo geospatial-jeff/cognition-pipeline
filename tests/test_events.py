@@ -3,14 +3,14 @@ import boto3
 import os
 import json
 
-from handler import MyPipeline
+from handler import PipelineUnittests
 
 lambda_client = boto3.client('lambda')
 
 class MyPipelineTestCases(unittest.TestCase):
 
     def setUp(self):
-        self.pipeline = MyPipeline()
+        self.pipeline = PipelineUnittests()
 
     def test_invoke(self):
         message = {"hello": "world"}
