@@ -149,14 +149,14 @@ class Function_BUCKET_NOTIFICATION(Function):
         super().__init__(func, pipeline_name)
 
     def template(self):
-        event_type = self.info['destination'].resource
+        event_type = self.func.args['destination'].resource
         if event_type == 'sns':
             return {
                 "events": [
                     {
                         "sns": {
-                            "arn": self.info['destination'].arn,
-                            "topicName": self.info['destination'].name
+                            "arn": self.func.args['destination'].arn,
+                            "topicName": self.func.args['destination'].name
                         }
                     }
                 ]
@@ -166,7 +166,7 @@ class Function_BUCKET_NOTIFICATION(Function):
                 "events": [
                     {
                         "sqs": {
-                            "arn": self.info['destination'].arn,
+                            "arn": self.func.args['destination'].arn,
                         }
                     }
                 ]
