@@ -1,5 +1,5 @@
 # Cognition-Pipeline
-Python library for building serverless, event-driven, data processing pipelines with AWS Lambda and Python.
+Python library for building and testing serverless, event-driven, data processing pipelines with AWS Lambda and Python.
 
 ## Overview
 Cognition-Pipeline is a python interface to the [Serverless Framework](https://serverless.com/), a widely-adopted toolkit for building serverless applications via configuration yaml files and code snippets.  Cognition-Pipeline abstracts the components of an AWS serverless application to provide an object-oriented interface for building customized data processing pipelines or services with Serverless Framework.  Your code is deployed and executed exactly how its written.
@@ -13,7 +13,7 @@ from pipeline import Pipeline, events
 class HelloWorldPipeline(Pipeline):
 
     def __init__(self):
-        super().__init__(name="hello-world")
+        super().__init__()
        
     @events.invoke
     def hello_world(self, event, context):
@@ -21,11 +21,10 @@ class HelloWorldPipeline(Pipeline):
 
 pipeline = HelloWorldPipeline()
 
+hello_world = pipeline.hello_world
+
 def deploy():
     pipeline.deploy()
-
-def hello_world(event, context):
-    pipeline.hello_world(event, context)
 ```
 
 ## Quickstart
@@ -37,8 +36,7 @@ def hello_world(event, context):
     - **Lambda Functions:** Create a new lambda function by creating a new Pipeline method.
     - **Events:** Configure the lambda function's event trigger with decorators.
     - **Resources:** Configure other AWS resources (SQS, SNS etc.) used by your Pipeline.
-    - **Services:** Write importable python functions which may be imported into your Pipeline.
-4. Generate a Serverless Framework `serverless.yml` configuration file  \
+4. Deploy your pipeline to AWS via Serverless Framework  \
 ```pipeline-deploy <new-directory>```
 
 ## Testing
