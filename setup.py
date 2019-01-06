@@ -15,7 +15,7 @@ setup(
     entry_points={
         "console_scripts": [
             "pipeline-create=pipeline._cli:create_pipeline",
-            "pipeline-deploy=pipeline._cli:deploy_pipeline"
+            "pipeline-deploy=pipeline._cli:deploy_pipeline",
         ]
-    }
+    },
 )

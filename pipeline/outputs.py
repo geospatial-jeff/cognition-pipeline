@@ -2,10 +2,9 @@ import yaml
 
 
 class Outputs(dict):
-
     @classmethod
     def load(cls, fname):
-        with open(fname, 'r') as stream:
+        with open(fname, "r") as stream:
             contents = yaml.load(stream)
             return cls(contents)
 
@@ -14,16 +13,16 @@ class Outputs(dict):
         self.update(contents)
 
     def endpoint(self):
-        if 'ServiceEndpoint' in self.keys():
-            return self['ServiceEndpoint']
+        if "ServiceEndpoint" in self.keys():
+            return self["ServiceEndpoint"]
         else:
             return None
 
     def deployment_bucket(self):
-        return self['ServerlessDeploymentBucketName']
+        return self["ServerlessDeploymentBucketName"]
 
     def functions(self):
-        if 'functions' in self.keys():
-            return self['functions']
+        if "functions" in self.keys():
+            return self["functions"]
         else:
             return None

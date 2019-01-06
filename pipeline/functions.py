@@ -14,7 +14,7 @@ class InvocationError(BaseException):
     pass
 
 
-lambda_client = boto3.client('lambda')
+lambda_client = boto3.client("lambda")
 
 
 class Function(object):
@@ -31,19 +31,18 @@ class Function(object):
 
     def package_function(self):
         """Package function with trigger"""
-        func_info = {'handler': 'handler.' + self.name}
+        func_info = {"handler": "handler." + self.name}
         trigger_info = self.template()
         if trigger_info:
             func_info.update(trigger_info)
-        if hasattr(self.func, 'timeout'):
-            func_info.update({'timeout': self.func.timeout})
-        if hasattr(self.func, 'memory'):
-            func_info.update({'memorySize': self.func.memory})
+        if hasattr(self.func, "timeout"):
+            func_info.update({"timeout": self.func.timeout})
+        if hasattr(self.func, "memory"):
+            func_info.update({"memorySize": self.func.memory})
         return func_info
 
 
 class Function_LAMBDA(Function):
-
     def __init__(self, func, pipeline_name):
         super().__init__(func, pipeline_name)
 
@@ -52,16 +51,15 @@ class Function_LAMBDA(Function):
 
     def invoke(self, data, invocation="RequestResponse"):
         long_name = f"{self.pipeline_name}-{execution.stage}-{self.name}"
-        response = lambda_client.invoke(FunctionName=long_name,
-                                        InvocationType=invocation,
-                                        Payload=json.dumps(data))
+        response = lambda_client.invoke(
+            FunctionName=long_name, InvocationType=invocation, Payload=json.dumps(data)
+        )
         if invocation == "RequestResponse":
-            response = json.loads(response['Payload'].read())
+            response = json.loads(response["Payload"].read())
         return response
 
 
 class Function_SNS(Function):
-
     def __init__(self, func, pipeline_name):
         super().__init__(func, pipeline_name)
 
@@ -70,8 +68,8 @@ class Function_SNS(Function):
             "events": [
                 {
                     "sns": {
-                        "arn": self.func.args['arn'],
-                        "topicName": self.func.args['topic_name']
+                        "arn": self.func.args["arn"],
+                        "topicName": self.func.args["topic_name"],
                     }
                 }
             ]
@@ -79,12 +77,12 @@ class Function_SNS(Function):
 
     def invoke(self, data):
         from handler import pipeline
-        resource = pipeline.resources[self.func.args['topic_name']]
+
+        resource = pipeline.resources[self.func.args["topic_name"]]
         response = resource.send_message(data)
 
 
 class Function_HTTP(Function):
-
     def __init__(self, func, pipeline_name):
         super().__init__(func, pipeline_name)
 
@@ -93,100 +91,85 @@ class Function_HTTP(Function):
             "events": [
                 {
                     "http": {
-                        "path": self.func.args['path'],
-                        "method": self.func.args['method'],
-                        "cors": self.func.args['cors']
+                        "path": self.func.args["path"],
+                        "method": self.func.args["method"],
+                        "cors": self.func.args["cors"],
                     }
                 }
             ]
         }
 
     def invoke(self, data):
-        outputs = Outputs.load('outputs.yml')
-        full_path = os.path.join(outputs.endpoint(), self.func.args['path'])
+        outputs = Outputs.load("outputs.yml")
+        full_path = os.path.join(outputs.endpoint(), self.func.args["path"])
         # there is am uch better way of doing this
-        if '{' and '}' in full_path:
-            regex = re.compile('{(.*?)\}')
+        if "{" and "}" in full_path:
+            regex = re.compile("{(.*?)\}")
             match = regex.findall(full_path)[0]
             full_path = full_path.replace("{" + match + "}", data)
-        if self.func.args['method'] == 'get':
+        if self.func.args["method"] == "get":
             r = requests.get(full_path)
-        elif self.func.args['method'] == 'post':
+        elif self.func.args["method"] == "post":
             r = requests.post(full_path, data)
         if r.status_code != 404:
-            response = r.content.decode('utf-8')
+            response = r.content.decode("utf-8")
             return response
         else:
             raise InvocationError("Request returned with 404 code")
 
 
 class Function_SQS(Function):
-
     def __init__(self, func, pipeline_name):
         super().__init__(func, pipeline_name)
 
     def template(self):
-        return {
-            "events": [
-                {
-                    "sqs": {
-                        "arn": self.func.args['arn'],
-                    }
-                }
-            ]
-        }
+        return {"events": [{"sqs": {"arn": self.func.args["arn"]}}]}
 
     def invoke(self, data):
         from handler import pipeline
-        resource = pipeline.resources[self.func.args['queue_name']]
+
+        resource = pipeline.resources[self.func.args["queue_name"]]
         response = resource.send_message(data)
         return response
 
 
 class Function_BUCKET_NOTIFICATION(Function):
-
     def __init__(self, func, pipeline_name):
         super().__init__(func, pipeline_name)
 
     def template(self):
-        event_type = self.func.args['destination'].resource
-        if event_type == 'sns':
+        event_type = self.func.args["destination"].resource
+        if event_type == "sns":
             return {
                 "events": [
                     {
                         "sns": {
-                            "arn": self.func.args['destination'].arn,
-                            "topicName": self.func.args['destination'].name
+                            "arn": self.func.args["destination"].arn,
+                            "topicName": self.func.args["destination"].name,
                         }
                     }
                 ]
             }
-        elif event_type == 'sqs':
-            return {
-                "events": [
-                    {
-                        "sqs": {
-                            "arn": self.func.args['destination'].arn,
-                        }
-                    }
-                ]
-            }
+        elif event_type == "sqs":
+            return {"events": [{"sqs": {"arn": self.func.args["destination"].arn}}]}
 
     def invoke(self, data, **kwargs):
         from handler import pipeline
-        resource = pipeline.resources[self.func.args['bucket'].name]
-        if 'key' in kwargs.keys():
-            key = kwargs['key']
+
+        resource = pipeline.resources[self.func.args["bucket"].name]
+        if "key" in kwargs.keys():
+            key = kwargs["key"]
         else:
             key = os.path.split(data)[-1]
-        if data.endswith('.tif') or data.endswith('.jpg'):
+        if data.endswith(".tif") or data.endswith(".jpg"):
             resource.upload_image(key, data)
         else:
-            with open(data, 'r') as f:
+            with open(data, "r") as f:
                 contents = f.read()
                 resource.upload_file(key, contents)
-        response = {'bucket': resource.name, 'key': key}
+        response = {"bucket": resource.name, "key": key}
         return response
+
 
 class FunctionGroup(object):
 
@@ -199,7 +182,8 @@ class FunctionGroup(object):
         self.all = functions
 
     def to_dict(self):
-        return {k:v.package_function() for (k,v) in self.all.items()}
+        return {k: v.package_function() for (k, v) in self.all.items()}
+
 
 def timeout(time):
 
@@ -209,8 +193,10 @@ def timeout(time):
         @wraps(f)
         def wrapped_f(self, event, context):
             return f(self, event, context)
+
         wrapped_f.timeout = time
         return wrapped_f
+
     return wrapper
 
 
@@ -224,6 +210,8 @@ def memory(mem_mb):
         @wraps(f)
         def wrapped_f(self, event, context):
             return f(self, event, context)
+
         wrapped_f.memory = mem_mb
         return wrapped_f
+
     return wrapper

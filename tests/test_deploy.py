@@ -2,6 +2,7 @@ import unittest
 
 from handler import PipelineUnittests
 
+
 class PipelineDeployTestCases(unittest.TestCase):
 
     """
@@ -15,7 +16,7 @@ class PipelineDeployTestCases(unittest.TestCase):
         x = 0
         try:
             self.pipeline.deploy()
-            x+=1
+            x += 1
         except:
             raise
-        self.assertEqual(x,1)
+        self.assertEqual(x, 1)

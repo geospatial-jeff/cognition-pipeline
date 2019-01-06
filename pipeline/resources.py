@@ -4,14 +4,14 @@ import time
 
 from .execution import execution
 
-s3_res = boto3.resource('s3')
-sqs_client = boto3.client('sqs')
-sqs_resource = boto3.resource('sqs')
-sns_client = boto3.client('sns')
-dynamodb = boto3.resource('dynamodb')
+s3_res = boto3.resource("s3")
+sqs_client = boto3.client("sqs")
+sqs_resource = boto3.resource("sqs")
+sns_client = boto3.client("sns")
+dynamodb = boto3.resource("dynamodb")
+
 
 class ServerlessResource(dict):
-
     def __init__(self):
         super().__init__()
         self.name = self.__class__.__name__
@@ -23,7 +23,8 @@ class ServerlessResource(dict):
     @property
     def resource(self):
         """Return resource type (sns, sqs etc.)"""
-        return self['Type'].split('::')[1].lower()
+        return self["Type"].split("::")[1].lower()
+
 
 class SNSTopic(ServerlessResource):
 
@@ -31,24 +32,24 @@ class SNSTopic(ServerlessResource):
 
     def __init__(self):
         super().__init__()
-        self['Type'] = 'AWS::SNS::Topic'
-        self['Properties'] = {'TopicName': self.name}
+        self["Type"] = "AWS::SNS::Topic"
+        self["Properties"] = {"TopicName": self.name}
 
     @property
     def arn(self):
         return f"arn:aws:sns:{execution.region}:{execution.accountid}:{self.name}"
 
     def attach_policy(self, policy):
-        policy['Properties']['PolicyDocument']['Id'] = self.name + '-policy'
-        policy['Properties']['PolicyDocument']['Statement'][0]['Resource'] = self.arn
-        policy['Properties']['Topics'].append(self.arn)
+        policy["Properties"]["PolicyDocument"]["Id"] = self.name + "-policy"
+        policy["Properties"]["PolicyDocument"]["Statement"][0]["Resource"] = self.arn
+        policy["Properties"]["Topics"].append(self.arn)
         policy.update({"DependsOn": [self.name]})
         return policy
 
     def send_message(self, message):
-        resp = sns_client.publish(TopicArn=self.arn,
-                                  Message=message)
+        resp = sns_client.publish(TopicArn=self.arn, Message=message)
         return resp
+
 
 class SNSPolicy(ServerlessResource):
 
@@ -56,23 +57,22 @@ class SNSPolicy(ServerlessResource):
 
     def __init__(self):
         super().__init__()
-        self['Type'] = 'AWS::SNS::TopicPolicy'
-        self['Properties'] = {
+        self["Type"] = "AWS::SNS::TopicPolicy"
+        self["Properties"] = {
             "PolicyDocument": {
                 "Id": None,
                 "Statement": [
                     {
                         "Effect": "Allow",
-                        "Principal": {
-                            "AWS": "*"
-                        },
+                        "Principal": {"AWS": "*"},
                         "Action": "sns:Publish",
-                        "Resource": None
+                        "Resource": None,
                     }
-                ]
+                ],
             },
-            "Topics": []
+            "Topics": [],
         }
+
 
 class SQSQueue(ServerlessResource):
 
@@ -80,10 +80,10 @@ class SQSQueue(ServerlessResource):
 
     def __init__(self):
         super().__init__()
-        self['Type'] = 'AWS::SQS::Queue'
-        self['Properties'] = {'QueueName': self.name}
+        self["Type"] = "AWS::SQS::Queue"
+        self["Properties"] = {"QueueName": self.name}
 
-        self.arn_pattern = 'arn:aws:sqs:${region}:${accountid}:${name}'
+        self.arn_pattern = "arn:aws:sqs:${region}:${accountid}:${name}"
         self.__url = None
 
     @property
@@ -96,28 +96,34 @@ class SQSQueue(ServerlessResource):
 
     def send_message(self, message, id=None):
         if id:
-            resp = sqs_client.send_message(QueueUrl=self.url,
-                                           MessageBody=json.dumps(message),
-                                           MessageAttributes={"id": {"DataType": "String", "StringValue": id}})
+            resp = sqs_client.send_message(
+                QueueUrl=self.url,
+                MessageBody=json.dumps(message),
+                MessageAttributes={"id": {"DataType": "String", "StringValue": id}},
+            )
         else:
-            resp = sqs_client.send_message(QueueUrl=self.url,
-                                           MessageBody=json.dumps(message))
+            resp = sqs_client.send_message(
+                QueueUrl=self.url, MessageBody=json.dumps(message)
+            )
         return resp
 
     def listen(self, timeout=10, wait_time=2):
         queue = sqs_resource.get_queue_by_name(QueueName=self.name)
         end_time = time.time() + timeout
         while time.time() < end_time:
-            messages = queue.receive_messages(WaitTimeSeconds=wait_time, MessageAttributeNames=['id'])
+            messages = queue.receive_messages(
+                WaitTimeSeconds=wait_time, MessageAttributeNames=["id"]
+            )
             for message in messages:
                 yield message
 
     def attach_policy(self, policy):
-        policy['Properties']['PolicyDocument']['Id'] = self.name + '-policy'
-        policy['Properties']['PolicyDocument']['Statement'][0]['Resource'] = self.arn
-        policy['Properties']['Queues'].append({'Ref': self.name})
+        policy["Properties"]["PolicyDocument"]["Id"] = self.name + "-policy"
+        policy["Properties"]["PolicyDocument"]["Statement"][0]["Resource"] = self.arn
+        policy["Properties"]["Queues"].append({"Ref": self.name})
         policy.update({"DependsOn": [self.name]})
         return policy
+
 
 class SQSPolicy(ServerlessResource):
 
@@ -125,23 +131,22 @@ class SQSPolicy(ServerlessResource):
 
     def __init__(self):
         super().__init__()
-        self['Type'] = 'AWS::SQS::QueuePolicy'
-        self['Properties'] = {
+        self["Type"] = "AWS::SQS::QueuePolicy"
+        self["Properties"] = {
             "PolicyDocument": {
                 "Id": None,
                 "Statement": [
                     {
                         "Effect": "Allow",
-                        "Principal": {
-                            "AWS": "*"
-                        },
+                        "Principal": {"AWS": "*"},
                         "Action": "sqs:*",
-                        "Resource": None
+                        "Resource": None,
                     }
-                ]
+                ],
             },
-            "Queues": []
+            "Queues": [],
         }
+
 
 class S3Bucket(ServerlessResource):
 
@@ -149,12 +154,12 @@ class S3Bucket(ServerlessResource):
 
     def __init__(self):
         super().__init__()
-        self['Type'] = 'AWS::S3::Bucket'
-        self['Properties'] = {'BucketName': self.name.lower()}
+        self["Type"] = "AWS::S3::Bucket"
+        self["Properties"] = {"BucketName": self.name.lower()}
 
     @property
     def arn(self):
-        return f'arn:aws:s3:::{self.name}'.lower()
+        return f"arn:aws:s3:::{self.name}".lower()
 
     def upload_file(self, key, data):
         object = s3_res.Object(self.name.lower(), key)
@@ -165,40 +170,35 @@ class S3Bucket(ServerlessResource):
 
     def read_file(self, key):
         object = s3_res.Object(self.name.lower(), key)
-        file_content = object.get()['Body'].read().decode('utf-8')
+        file_content = object.get()["Body"].read().decode("utf-8")
         return file_content
 
     def download_image(self, key, file):
         s3_res.Bucket(self.name.lower()).download_file(key, file)
 
-class DynamoDB(ServerlessResource):
 
+class DynamoDB(ServerlessResource):
     def __init__(self):
         super().__init__()
-        self['Type'] = 'AWS::DynamoDB::Table'
-        self['Properties'] = {'TableName': self.name,
-                              'AttributeDefinitions': [],
-                              'KeySchema': [],
-                              'ProvisionedThroughput': {'ReadCapacityUnits': 1,
-                                                        'WriteCapacityUnits': 1
-                                                        },
-                              }
+        self["Type"] = "AWS::DynamoDB::Table"
+        self["Properties"] = {
+            "TableName": self.name,
+            "AttributeDefinitions": [],
+            "KeySchema": [],
+            "ProvisionedThroughput": {"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
+        }
 
     def add_attribute(self, name, type):
-        self['Properties']['AttributeDefinitions'].append({
-            "AttributeName": name,
-            "AttributeType": type
-        })
+        self["Properties"]["AttributeDefinitions"].append(
+            {"AttributeName": name, "AttributeType": type}
+        )
 
     def add_key(self, name, type):
-        self['Properties']['KeySchema'].append({
-            "AttributeName": name,
-            "KeyType": type
-        })
+        self["Properties"]["KeySchema"].append({"AttributeName": name, "KeyType": type})
 
     @property
     def primary_key(self):
-        return self['Properties']['KeySchema'][0]['AttributeName']
+        return self["Properties"]["KeySchema"][0]["AttributeName"]
 
     @property
     def arn(self):
@@ -219,12 +219,13 @@ class DynamoDB(ServerlessResource):
             key = self.primary_key
         table = dynamodb.Table(self.name)
         result = table.get_item(Key={key: item})
-        return result['Item']
+        return result["Item"]
 
     def list(self):
         table = dynamodb.Table(self.name)
         result = table.scan()
-        return result['Items']
+        return result["Items"]
+
 
 class ResourceGroup(object):
 
@@ -247,7 +248,7 @@ class ResourceGroup(object):
         """Dump all resources to dict"""
         resources = {"Resources": {}}
         dicts = [self.all[k].build_resource() for k in self.all.keys()]
-        [resources['Resources'].update(_) for _ in dicts]
+        [resources["Resources"].update(_) for _ in dicts]
         return resources
 
     def update_resource(self, resource, new_resource):

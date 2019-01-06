@@ -1,17 +1,18 @@
 import yaml
 import boto3
 
-client = boto3.client('sts')
+client = boto3.client("sts")
+
 
 class Execution(object):
 
     """Object which defines the execution environment for the pipeline"""
 
     def __init__(self):
-        self.__runtime = 'python3.6'
-        self.__region = 'us-east-1'
-        self.__stage = 'dev'
-        self.__accountid = client.get_caller_identity()['Account']
+        self.__runtime = "python3.6"
+        self.__region = "us-east-1"
+        self.__stage = "dev"
+        self.__accountid = client.get_caller_identity()["Account"]
 
     @property
     def runtime(self):
@@ -40,5 +41,6 @@ class Execution(object):
     @property
     def accountid(self):
         return self.__accountid
+
 
 execution = Execution()

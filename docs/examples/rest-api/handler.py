@@ -7,19 +7,20 @@ from .utils import DecimalEncoder
 
 """Define resources"""
 
-class MyFirstTable(resources.DynamoDB):
 
+class MyFirstTable(resources.DynamoDB):
     def __init__(self):
         super().__init__()
-        self.add_attribute('id', 'S')
-        self.add_key('id', 'HASH')
+        self.add_attribute("id", "S")
+        self.add_key("id", "HASH")
+
 
 table = MyFirstTable()
 
 """Create pipeline"""
 
-class SimpleRestAPI(Pipeline):
 
+class SimpleRestAPI(Pipeline):
     def __init__(self):
         super().__init__(resources=[table])
 
@@ -27,44 +28,38 @@ class SimpleRestAPI(Pipeline):
     def create(self, event, context):
         timestamp = int(time.time() * 1000)
         item = {
-            'id': str(uuid.uuid1()),
-            'text': event['text'],
-            'checked': False,
-            'createdAt': timestamp,
-            'updatedAt': timestamp,
+            "id": str(uuid.uuid1()),
+            "text": event["text"],
+            "checked": False,
+            "createdAt": timestamp,
+            "updatedAt": timestamp,
         }
         table.put(item)
 
-        response = {'statusCode': 200,
-                    'body': json.dumps(item)}
+        response = {"statusCode": 200, "body": json.dumps(item)}
         return response
 
     @events.http(path="todos", method="get", cors="true")
     def list(self, event, context):
         result = table.list()
 
-        response = {
-            "statusCode": 200,
-            "body": json.dumps(result, cls=DecimalEncoder)
-        }
+        response = {"statusCode": 200, "body": json.dumps(result, cls=DecimalEncoder)}
         return response
 
     @events.http(path="todos/{id}", method="get", cors="true")
     def get(self, event, context):
-        result = table.get(event['id'])
+        result = table.get(event["id"])
 
-        response = {
-            "statusCode": 200,
-            "body": json.dumps(result, cls=DecimalEncoder)
-        }
+        response = {"statusCode": 200, "body": json.dumps(result, cls=DecimalEncoder)}
 
         return response
 
     @events.http(path="todos/{id}", method="delete", cors="true")
     def delete(self, event, context):
-        table.delete(event['id'])
-        response = {'statusCode': 200}
+        table.delete(event["id"])
+        response = {"statusCode": 200}
         return response
+
 
 pipeline = SimpleRestAPI()
 
@@ -76,6 +71,7 @@ get = pipeline.get
 delete = pipeline.delete
 
 """Deploy pipeline"""
+
 
 def deploy():
     pipeline.deploy()

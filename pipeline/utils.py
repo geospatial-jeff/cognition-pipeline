@@ -2,6 +2,7 @@ import yaml
 from .resources import ServerlessResource
 from .execution import execution
 
+
 class Role(object):
 
     """Object which defines IAM Role used by the pipeline and its lambda functions"""
@@ -25,17 +26,15 @@ class Role(object):
         if len(actions) == 0 and len(resources) == 0:
             return
 
-        policy = {
-            "Effect": self.effect
-        }
+        policy = {"Effect": self.effect}
         if len(self.action) > 0:
             policy.update({"Action": actions})
         if len(self.resource) > 0:
             policy.update({"Resource": resources})
         return [policy]
 
-def include(fpath):
 
+def include(fpath):
     class DummyResource(ServerlessResource):
 
         """Dummy resource class with build_resource method"""
@@ -52,7 +51,7 @@ def include(fpath):
         def arn(self):
             return f"arn:aws:{self.resource}:{execution.region}:{execution.accountid}:{self.name}"
 
-    with open(fpath, 'r') as stream:
+    with open(fpath, "r") as stream:
         data = yaml.load(stream)
-        res_list = [DummyResource(k,v) for (k,v) in data.items()]
+        res_list = [DummyResource(k, v) for (k, v) in data.items()]
         return res_list
