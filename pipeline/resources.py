@@ -204,6 +204,12 @@ class DynamoDB(ServerlessResource):
     def arn(self):
         return f"arn:aws:dynamodb:{execution.region}:{execution.accountid}:table/{self.name}"
 
+    def batch_write(self, items):
+        table = dynamodb.Table(self.name)
+        with table.batch_writer() as batch:
+            for item in items:
+                batch.put_item(Item=item)
+
     def put(self, item):
         table = dynamodb.Table(self.name)
         table.put_item(Item=item)
