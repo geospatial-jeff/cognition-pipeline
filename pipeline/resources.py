@@ -238,7 +238,7 @@ class DynamoDB(ServerlessResource):
         return result["Item"]
 
     def list(self):
-        table = dynamodb.Table(self.name)
+        table = dynamodb_resource.Table(self.name)
         result = table.scan()
         return result["Items"]
 
