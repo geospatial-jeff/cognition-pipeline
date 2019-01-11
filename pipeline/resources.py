@@ -8,7 +8,8 @@ s3_res = boto3.resource("s3")
 sqs_client = boto3.client("sqs")
 sqs_resource = boto3.resource("sqs")
 sns_client = boto3.client("sns")
-dynamodb = boto3.resource("dynamodb")
+dynamodb_resource = boto3.resource("dynamodb")
+dynamodb_client = boto3.client("dynamodb")
 
 
 class ServerlessResource(dict):
@@ -205,25 +206,34 @@ class DynamoDB(ServerlessResource):
         return f"arn:aws:dynamodb:{execution.region}:{execution.accountid}:table/{self.name}"
 
     def batch_write(self, items):
-        table = dynamodb.Table(self.name)
+        table = dynamodb_resource.Table(self.name)
         with table.batch_writer() as batch:
             for item in items:
                 batch.put_item(Item=item)
 
     def put(self, item):
-        table = dynamodb.Table(self.name)
+        table = dynamodb_resource.Table(self.name)
         table.put_item(Item=item)
+
+    def query(self, index_name, key_condition_expression, expression_attribute_values):
+        resp = dynamodb_client.query(
+            TableName=self.name,
+            IndexName=index_name,
+            KeyConditionExpression=key_condition_expression,
+            ExpressionAttributeValues=expression_attribute_values
+        )
+        return resp
 
     def delete(self, item, key=None):
         if not key:
             key = self.primary_key
-        table = dynamodb.Table(self.name)
+        table = dynamodb_resource.Table(self.name)
         table.delete_item(Key={key: item})
 
     def get(self, item, key=None):
         if not key:
             key = self.primary_key
-        table = dynamodb.Table(self.name)
+        table = dynamodb_resource.Table(self.name)
         result = table.get_item(Key={key: item})
         return result["Item"]
 
