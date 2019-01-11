@@ -58,6 +58,9 @@ class Pipeline(object):
         if self.resources:
             for (k, v) in self.resources.all.items():
                 if "policy" not in v["Type"].lower():
+                    if "dynamo" in v["Type"].lower():
+                        if "GlobalSecondaryIndexes" in v['Properties'].keys():
+                            self.role.add_resource(v.arn+'/index/*')
                     if "s3" in v["Type"].lower():
                         self.role.add_resource("arn:aws:s3:::*")
                     else:
